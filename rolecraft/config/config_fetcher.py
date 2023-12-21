@@ -6,7 +6,7 @@ from rolecraft.queue import Queue
 ConfigFetcher = Callable[[Queue], Config]
 
 
-class DefaultConfigFetcher(ConfigFetcher):
+class DefaultConfigFetcher:
     def __init__(
         self,
         config: Config | None = None,

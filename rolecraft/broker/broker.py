@@ -1,9 +1,18 @@
 import abc
 from abc import abstractmethod
-from rolecraft.message import Message
 
 
-class Broker(abc.ABC):
+class ReceiveFuture[Message](abc.ABC):
+    @abstractmethod
+    def result(self) -> list[Message]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def cancel(self):
+        raise NotImplementedError
+
+
+class Broker[Message](abc.ABC):
     @abstractmethod
     def enqueue(
         self,
@@ -12,24 +21,41 @@ class Broker(abc.ABC):
         *,
         priority: int = 50,
         delay_millis: int = 0,
+        create_queue: bool = False,
+        message_id=None,
         **kwargs,
     ) -> str:
-        pass
+        raise NotImplementedError
 
     @abstractmethod
-    def receive(
-        self, queue_name: str, max_number: int = 1, wait_time_seconds: int = 0
-    ) -> list[Message]:
-        """Receives a list of tasks from the Queue, and the queue will put the tasks on the in process status, which will not be received by other workers before the visibility timeout.
+    def block_receive(
+        self,
+        queue_name: str,
+        *,
+        max_number: int = 1,
+        wait_time_seconds: float | None = 0,
+        meta_keys: list[str] | None = None,
+    ) -> ReceiveFuture[Message]:
+        raise NotImplementedError
 
-        The block should be interrupted when close method is called.
-        """
-        pass
+    def receive(
+        self,
+        queue_name: str,
+        *,
+        max_number: int = 1,
+        meta_keys: list[str] | None = None,
+    ) -> list[Message]:
+        return self.block_receive(
+            queue_name,
+            max_number=max_number,
+            meta_keys=meta_keys,
+        ).result()
 
     @abstractmethod
     def qsize(self, queue_name: str) -> int:
-        """Returns the number of uncompleted tasks in th queue, including those are in the process"""
-        pass
+        """Returns the number of uncompleted tasks in th queue, including those
+        that are in the process"""
+        raise NotImplementedError
 
     @abstractmethod
     def ack(
@@ -41,9 +67,11 @@ class Broker(abc.ABC):
     ) -> bool:
         """Marks the task as completed successfully
 
-        Returns: if the task_id exists and the task is marked as completed, returns True. If the task is not working in process or it is failed permanently, the ack operation will fail to update it as completed.
+        Returns: if the message exists and the task is marked as completed,
+            returns True. If the task is not working in process or it is failed
+            permanently, the ack operation will fail to update it as completed.
         """
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def nack(
@@ -55,18 +83,24 @@ class Broker(abc.ABC):
     ) -> bool:
         """Marks the task as failed.
 
-        Returns: if the task_id exists and the task is marked as failed, returns True. If the task is not working in process or it is compeleted successfully, the ack operation will fail to update it as failed.
+        Returns: if the task_id exists and the task is marked as failed,
+            returns True. If the task is not working in process or it is
+            compeleted successfully, the ack operation will fail to update
+            it as failed.
         """
-        pass
+        raise NotImplementedError
 
     @abstractmethod
-    def requeue(self, message: Message, *, queue_name: str | None = None) -> bool:
-        """Requeue the task when give back the prefetched task. This will mark the task with the idle status.
+    def requeue(
+        self, message: Message, *, queue_name: str | None = None
+    ) -> bool:
+        """Requeue the task when give back the prefetched task.
+        This will mark the task with the idle status.
 
         Returns:
         If the task is already ended or in retry, then the operation will fail.
         """
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def retry(
@@ -82,7 +116,7 @@ class Broker(abc.ABC):
         Returns:
         If the task is already eneded or in idle, then the operation will failed.
         """
-        pass
+        raise NotImplementedError
 
     def close(self):
         pass

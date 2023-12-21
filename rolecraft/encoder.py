@@ -1,9 +1,20 @@
-class Encoder:
-    def encode(self, message) -> bytes:
-        pass
-
-    def decode(self, data: bytes):
-        pass
+import abc
+from .message import Message
+from .broker import BytesRawMessage
 
 
-default = None
+class Encoder[RawMessage](abc.ABC):
+    @abc.abstractmethod
+    def encode(self, message: Message) -> RawMessage:
+        raise NotImplementedError
+
+    def decode(self, raw_message: RawMessage) -> Message:
+        raise NotImplementedError
+
+
+class BytesEncoder(Encoder[BytesRawMessage]):
+    def encode(self, message: Message) -> BytesRawMessage:
+        raise NotImplementedError
+
+    def decode(self, raw_message: BytesRawMessage) -> Message:
+        raise NotImplementedError
