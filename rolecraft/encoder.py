@@ -18,3 +18,7 @@ class BytesEncoder(Encoder[BytesRawMessage]):
 
     def decode(self, raw_message: BytesRawMessage) -> Message:
         raise NotImplementedError
+
+
+class DefaultBytesEncoder(BytesEncoder):
+    pass

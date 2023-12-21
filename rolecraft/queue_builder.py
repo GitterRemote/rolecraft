@@ -1,6 +1,6 @@
 from .queue import Queue
 from .config import ConfigFetcher
-from .broker import Broker
+from .broker import Broker, default_broker
 
 
 class QueueBuilder:
@@ -21,9 +21,9 @@ class QueueBuilder:
         all_queues = []
 
         if queue_names:
-            broker = self._get_default_broker()
-            for queue_name in queue_names:
-                all_queues.append(Queue(name=queue_name, broker=broker))
+            all_queues.extend(
+                self._build_queues_with_default_broker(queue_names)
+            )
 
         all_queues.extend(queues)
 
@@ -32,14 +32,21 @@ class QueueBuilder:
 
         return [self._wrap(q) for q in all_queues]
 
+    def _build_queues_with_default_broker(self, queue_names):
+        broker = self._get_default_broker()
+        for queue_name in queue_names:
+            config = self.config_fetcher(queue_name, broker)
+            yield Queue(name=queue_name, broker=broker, encoder=config.encoder)
+
     def _get_default_queue(self) -> Queue:
         return Queue(name="default", broker=self._get_default_broker())
 
     def _get_default_broker(self) -> Broker:
-        raise NotImplementedError
+        assert default_broker
+        return default_broker
 
     def _wrap(self, queue: Queue) -> Queue:
-        config = self.config_fetcher(queue)
+        config = self.config_fetcher(queue.name, queue.broker)
         for middleware in config.middlewares:
             queue = middleware(queue)
             assert isinstance(queue, Queue)
