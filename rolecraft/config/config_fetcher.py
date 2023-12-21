@@ -16,17 +16,21 @@ class DefaultConfigFetcher:
         self.queue_configs = queue_configs
         self.broker_configs = broker_configs
 
+    # TODO: test config_for
     def config_for(
         self,
         queue_name: str,
         broker: Broker | None = None,
     ) -> Config:
-        # FIXME: merge instead of ta
-        return (
-            self.queue_configs.get(queue_name)
-            or (broker and self.broker_configs.get(broker))
-            or self.config
-            or Config.default()
-        )
+        c = Config()
+        for config in (
+            self.queue_configs.get(queue_name),
+            (broker and self.broker_configs.get(broker)),
+            self.config,
+            Config.default(),
+        ):
+            if config:
+                c.merge_from(config)
+        return c
 
     __call__ = config_for
