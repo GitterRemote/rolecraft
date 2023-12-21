@@ -1,9 +1,8 @@
 from typing import Callable
 from .config import Config
 from rolecraft.broker import Broker
-from rolecraft.queue import Queue
 
-ConfigFetcher = Callable[[Queue], Config]
+ConfigFetcher = Callable[[str, Broker | None], Config]
 
 
 class DefaultConfigFetcher:
@@ -17,12 +16,17 @@ class DefaultConfigFetcher:
         self.queue_configs = queue_configs
         self.broker_configs = broker_configs
 
-    def config_for(self, queue: Queue) -> Config:
+    def config_for(
+        self,
+        queue_name: str,
+        broker: Broker | None = None,
+    ) -> Config:
         # FIXME: merge instead of ta
         return (
-            self.queue_configs.get(queue.name)
-            or self.broker_configs.get(queue.broker)
+            self.queue_configs.get(queue_name)
+            or (broker and self.broker_configs.get(broker))
             or self.config
+            or Config.default()
         )
 
     __call__ = config_for
