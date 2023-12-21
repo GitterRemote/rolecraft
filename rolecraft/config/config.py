@@ -20,3 +20,11 @@ class Config:
             consumer_wait_time_seconds=10 * 60,
             encoder=_encoder_mod.DefaultBytesEncoder(),
         )
+
+    def merge_from(self, config: Self) -> Self:
+        for field in dataclasses.fields(self):
+            if getattr(self, field.name) is None:
+                value = getattr(config, field.name)
+                if value is not None:
+                    setattr(self, field.name, value)
+        return self
