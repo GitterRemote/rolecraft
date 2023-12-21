@@ -1,13 +1,12 @@
-from typing import TypeVar
-import queue
+import logging
 from .message import Message
-from .worker_pool import WorkerPool
+from .worker_pool import WorkerPool, ThreadWorkerPool
 from .consumer import Consumer
+
+logger = logging.getLogger(__name__)
 
 
 class Worker:
-    Q = TypeVar("Q", bound=queue.Queue | None)
-
     def __init__(self, worker_pool: WorkerPool, consumer: Consumer) -> None:
         self.worker_pool = worker_pool
         self.consumer = consumer
@@ -15,61 +14,97 @@ class Worker:
         self._stopped = False
 
     def start(self):
-        # Assume worker pool is in the current process
-        # TODO: otherwise, start the same number threads as the concurrency of the worker pool to consume.
-
         worker_pool = self.worker_pool
+        if not isinstance(worker_pool, ThreadWorkerPool):
+            # if the worker thread is not in the current process, it has no
+            # access to the Queue objects, so it cannot finish the ack
+            # operations.
+            raise NotImplementedError
+
+        worker_pool.start()
+
         for i in range(worker_pool.worker_num):
             worker_pool.submit(self._run, identity=i)
 
     def stop(self):
         self._stopped = True
+        self.worker_pool.stop()
+
+    def join(self):
+        self.worker_pool.join()
 
     def _run(self, identity: int):
         """long running method"""
-        # FIXME: check stopped or consumer will raise StopIteration
+        # consumer will raise StopIteration when stopped
         for message in self.consumer:
-            # TODO: should consumer always return a Message or return None when timeout?
-            if not message:
-                continue
+            if self._stopped:
+                self._handle_leftover(message)
+                return
             self._handle(message)
 
     def _handle(self, message: Message):
-        # TODO: get role and its function, then call function
-        pass
+        try:
+            result = self._craft(message)
+        except Exception as e:
+            self._handle_error(message, e)
+        else:
+            self._handle_result(message, result)
 
-    def handle_error(
+    def _craft(self, message: Message):
+        # TODO: get role and its function, then call function
+        raise NotImplementedError
+
+    def _handle_leftover(self, message: Message):
+        # TODO: log and requeue
+        logger.warning(
+            "requeuing leftover message as worker stopped: %s",
+            message.id,
+        )
+        try:
+            if not message.requeue():
+                logger.error(
+                    "requeuing leftover message failed: %s",
+                    message.id,
+                )
+        except Exception as e:
+            logger.error(
+                "requeuing leftover message failed: %s",
+                message.id,
+                exc_info=e,
+            )
+
+    def _handle_error(
         self,
         message: Message,
         exception: Exception,
-        result_queue: Q = None,
     ):
         try:
-            if not self._do_ack:
-                result_queue.put((message, exception))
-                return
-
             if not message.nack(exception=exception):
-                # TODO: log error
-                pass
+                logger.error(
+                    "nack message failed: %s",
+                    message.id,
+                )
         except Exception as e:
-            # TODO: log
-            pass
+            logger.error(
+                "nack message failed: %s",
+                message.id,
+                exc_info=e,
+            )
 
-    def handle_result(
+    def _handle_result(
         self,
         message: Message,
         result,
-        result_queue: Q = None,
     ):
         try:
-            if not self._do_ack:
-                result_queue.put((message, result))
-                return
-
             if not message.ack(result=result):
-                # TODO: log error
-                pass
+                logger.error(
+                    "ack message failed: %s",
+                    message.id,
+                )
         except Exception as e:
-            # TODO: log
-            pass
+            logger.error(
+                "ack message failed: %s",
+                message.id,
+                exc_info=e,
+            )

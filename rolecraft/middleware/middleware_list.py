@@ -5,7 +5,7 @@ from .middleware import Middleware
 from .retryable import Retryable
 
 
-@dataclasses.dataclass(init=False, eq=False, order=False)
+@dataclasses.dataclass(init=False, eq=False, order=False, repr=False)
 class MiddlewareList[M: Middleware](collections.abc.MutableSequence[M]):
     _middlewares: list[Middleware]
     retryable: Retryable | None = None

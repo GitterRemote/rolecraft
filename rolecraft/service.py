@@ -33,7 +33,7 @@ class Service:
             queues=queues,
         ).build()
 
-        self.worker_pool = _worker_pool.WorkerPool()
+        self.worker_pool = _worker_pool.ThreadWorkerPool()
         self.consumer = _consumer.Consumer(
             queues=self.queues,
             worker_pool=self.worker_pool,
@@ -56,26 +56,31 @@ class Service:
             4. encoder
         3. start dispatcher
         """
+        self.worker_pool.thread_num = thread_num
+
         self._register_signal()
 
-        self.worker_pool.thread_num = thread_num
-        self.worker_pool.start()
         self.consumer.start()
-
-        # allow worker_pool to work in the current thread
-        self.worker_pool.join()
-        self.consumer.join()
+        self.worker.start()
 
     def stop(self):
-        # FIXME: order of the close
+        # Stop the worker and then the consumer. If not done in this order,
+        # the worker may encounter an error during consumption
+        self.worker.stop()
+        self.consumer.stop()
+
+        # Queues shouldn't be closed unless all pending messages are acked or
+        # requeued
         for queue in self.queues:
             queue.close()
-        self.consumer.stop()
-        self.worker_pool.stop()
+
+    def join(self):
+        self.worker.join()
+        self.consumer.join()
 
     def _register_signal(self):
-        signal.signal(signal.SIGINT, self._handle_signal)
-        signal.signal(signal.SIGINT, self._handle_signal)
+        def handle_signal(signum, frame):
+            self.stop()
 
-    def _handle_signal(self, signum, frame):
-        self.stop()
+        signal.signal(signal.SIGINT, handle_signal)
+        signal.signal(signal.SIGINT, handle_signal)
