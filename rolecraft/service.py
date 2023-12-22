@@ -34,9 +34,8 @@ class Service:
         ).build()
 
         self.worker_pool = _worker_pool.ThreadWorkerPool()
-        self.consumer = _consumer.Consumer(
-            queues=self.queues,
-            worker_pool=self.worker_pool,
+        self.consumer: _consumer.Consumer = _consumer.DefaultConsumer(
+            queues=self.queues
         )
         self.worker = _worker.Worker(worker_pool=self.worker_pool)
 

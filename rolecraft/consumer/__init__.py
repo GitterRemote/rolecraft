@@ -1,3 +1,4 @@
-from .consumer import Consumer
+from .consumer import Consumer, ConsumerStoppedError
+from .default_consumer import DefaultConsumer
 
-__all__ = ["Consumer"]
+__all__ = ["Consumer", "ConsumerStoppedError", "DefaultConsumer"]
