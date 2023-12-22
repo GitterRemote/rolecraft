@@ -45,10 +45,12 @@ class Queue[RawMessage](abc.ABC):
         name: str,
         broker: Broker[RawMessage],
         encoder: Encoder[RawMessage],
+        wait_time_seconds: int | None = None,
     ) -> None:
         self.name = name
         self.broker = broker
         self.encoder = encoder
+        self.wait_time_seconds = wait_time_seconds
 
     @copy_method_signature(Broker[Message].enqueue)
     def enqueue(self, *args, **kwargs):
@@ -56,6 +58,7 @@ class Queue[RawMessage](abc.ABC):
 
     @copy_method_signature(Broker[Message].block_receive)
     def block_receive(self, *args, **kwargs):
+        kwargs.setdefault("wait_time_seconds", self.wait_time_seconds)
         future = self.broker.block_receive(self.name, *args, **kwargs)
         future.result = self._wrap_result(future.result)
         return future
