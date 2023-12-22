@@ -110,3 +110,9 @@ def test_put_before_wait(notify_queue):
         notify_queue._condition, "wait", side_effect=put_before_wait
     ):
         assert notify_queue.get() == 1
+
+
+def test_iterable(notify_queue):
+    assert list(notify_queue) == []
+    notify_queue.put(1)
+    assert list(notify_queue) == [1]
