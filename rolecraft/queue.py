@@ -58,6 +58,8 @@ class Queue[RawMessage](abc.ABC):
 
     @copy_method_signature(Broker[Message].block_receive)
     def block_receive(self, *args, **kwargs):
+        """If the wait_time_seconds is None, it will be default value of the
+        queue."""
         kwargs.setdefault("wait_time_seconds", self.wait_time_seconds)
         future = self.broker.block_receive(self.name, *args, **kwargs)
         future.result = self._wrap_result(future.result)
