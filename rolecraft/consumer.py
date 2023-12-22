@@ -31,13 +31,11 @@ class Consumer:
         self,
         queues: Sequence[Queue],
         config_fetcher: ConfigFetcher | None,
-        wait_time_seconds=10 * 60,
         no_prefetch: NoPrefetch | None = None,
     ) -> None:
         self.queues = queues
         self.no_prefetch = no_prefetch
         self.config_fetcher = config_fetcher
-        self.wait_time_seconds = wait_time_seconds
 
         self._stopped = False
         self._consumer_threads: list[threading.Thread] = []

@@ -1,9 +1,11 @@
 from .queue import Queue
-from .config import ConfigFetcher
+from .config import Config, ConfigFetcher
 from .broker import Broker, default_broker
 
 
 class QueueBuilder:
+    """Build and decorate queues according to the queue config."""
+
     def __init__(
         self,
         config_fetcher: ConfigFetcher,
@@ -36,10 +38,7 @@ class QueueBuilder:
         broker = self._get_default_broker()
         for queue_name in queue_names:
             config = self.config_fetcher(queue_name, broker)
-            yield Queue(name=queue_name, broker=broker, encoder=config.encoder)
-
-    def _get_default_queue(self) -> Queue:
-        return Queue(name="default", broker=self._get_default_broker())
+            yield self._new_queue(queue_name, broker, config)
 
     def _get_default_broker(self) -> Broker:
         assert default_broker
@@ -51,3 +50,18 @@ class QueueBuilder:
             queue = middleware(queue)
             assert isinstance(queue, Queue)
         return queue
+
+    def _get_default_queue(self) -> Queue:
+        return self._new_queue(
+            name="default",
+            broker=self._get_default_broker(),
+            config=Config.default(),
+        )
+
+    def _new_queue(self, name: str, broker: Broker, config: Config) -> Queue:
+        return Queue(
+            name=name,
+            broker=broker,
+            encoder=config.encoder,
+            wait_time_seconds=config.consumer_wait_time_seconds,
+        )
