@@ -1,4 +1,3 @@
-from typing import Callable
 import logging
 import signal
 from .queue import Queue
@@ -23,6 +22,7 @@ class Service:
         broker_configs: dict[Broker, Config] | None = None,
         config_fetcher: ConfigFetcher | None = None,
     ) -> None:
+        # TODO: move into start method
         self.config_fetcher = config_fetcher or DefaultConfigFetcher(
             config, queue_configs, broker_configs
         )
