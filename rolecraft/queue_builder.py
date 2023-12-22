@@ -1,4 +1,4 @@
-from .queue import Queue
+from .queue import MessageQueue
 from .config import Config, ConfigFetcher
 from .broker import Broker, default_broker
 
@@ -10,16 +10,16 @@ class QueueBuilder:
         self,
         config_fetcher: ConfigFetcher,
         queue_names: list[str] | None = None,
-        queues: list[Queue] | None = None,
+        queues: list[MessageQueue] | None = None,
     ):
         self.queue_names = queue_names
         self.queues = queues
         self.config_fetcher = config_fetcher
 
-    def build(self) -> list[Queue]:
+    def build(self) -> list[MessageQueue]:
         return self._build_queues(self.queue_names, self.queues)
 
-    def _build_queues(self, queue_names, queues) -> list[Queue]:
+    def _build_queues(self, queue_names, queues) -> list[MessageQueue]:
         all_queues = []
 
         if queue_names:
@@ -44,22 +44,24 @@ class QueueBuilder:
         assert default_broker
         return default_broker
 
-    def _wrap(self, queue: Queue) -> Queue:
+    def _wrap(self, queue: MessageQueue) -> MessageQueue:
         config = self.config_fetcher(queue.name, queue.broker)
         for middleware in config.middlewares:
             queue = middleware(queue)
-            assert isinstance(queue, Queue)
+            assert isinstance(queue, MessageQueue)
         return queue
 
-    def _get_default_queue(self) -> Queue:
+    def _get_default_queue(self) -> MessageQueue:
         return self._new_queue(
             name="default",
             broker=self._get_default_broker(),
             config=Config.default(),
         )
 
-    def _new_queue(self, name: str, broker: Broker, config: Config) -> Queue:
-        return Queue(
+    def _new_queue(
+        self, name: str, broker: Broker, config: Config
+    ) -> MessageQueue:
+        return MessageQueue(
             name=name,
             broker=broker,
             encoder=config.encoder,

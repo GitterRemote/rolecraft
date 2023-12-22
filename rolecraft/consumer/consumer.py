@@ -2,7 +2,7 @@ from collections.abc import Sequence
 import contextlib
 import logging
 import threading
-from rolecraft.queue import Queue
+from rolecraft.queue import MessageQueue
 from rolecraft.message import Message
 from rolecraft.config import ConfigFetcher
 from rolecraft import notify_queue as _notify_queue
@@ -31,7 +31,7 @@ class Consumer:
 
     def __init__(
         self,
-        queues: Sequence[Queue],
+        queues: Sequence[MessageQueue],
         config_fetcher: ConfigFetcher | None,
         no_prefetch: NoPrefetch | None = None,
         prefetch_size=0,
@@ -151,7 +151,7 @@ class Consumer:
                 self._consumer_threads.append(thread)
                 thread.start()
 
-    def _consume(self, queue: Queue):
+    def _consume(self, queue: MessageQueue):
         local_queue = self._local_queue
         consumer_num = len(self.queues)
         assert local_queue.maxsize > 0

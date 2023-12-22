@@ -10,7 +10,7 @@ class Meta:
 @dataclasses.dataclass
 class Message:
     id: str
-    queue: "queue.Queue"
+    queue: "queue.MessageQueue"
     meta: Meta
 
     role_name: str
