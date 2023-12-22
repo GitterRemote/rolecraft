@@ -5,6 +5,7 @@ from abc import abstractmethod
 class ReceiveFuture[Message](abc.ABC):
     @abstractmethod
     def result(self) -> list[Message]:
+        """Return an empty list asap when cancel() is called."""
         raise NotImplementedError
 
     @abstractmethod

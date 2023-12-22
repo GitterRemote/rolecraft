@@ -1,9 +1,11 @@
 from collections.abc import Sequence
+import contextlib
 import logging
 import threading
 from .queue import Queue
 from .message import Message
 from .config import ConfigFetcher
+from . import notify_queue as _notify_queue
 
 logger = logging.getLogger(__name__)
 
@@ -32,29 +34,39 @@ class Consumer:
         queues: Sequence[Queue],
         config_fetcher: ConfigFetcher | None,
         no_prefetch: NoPrefetch | None = None,
+        prefetch_size=0,
     ) -> None:
         self.queues = queues
         self.no_prefetch = no_prefetch
+        self.prefetch_size = prefetch_size
         self.config_fetcher = config_fetcher
 
         self._stopped = False
         self._consumer_threads: list[threading.Thread] = []
 
+        self._lock = threading.Lock()
+        self._local_queue = _notify_queue.NotifyQueue[Message](
+            maxsize=self.prefetch_size
+        )
+        self._result_future_sets = set()
+        self._condition = threading.Condition()
+
     def consume(self, max_num=1) -> list[Message]:
         """The method is thread safe.
 
-        raises: ConsumerStoppedError when stopped
+        Raises:
+            ConsumerStoppedError: when stopped
         """
         if self._stopped:
             raise ConsumerStoppedError
 
         if self.no_prefetch:
-            return self._fetch(max_num)
+            return self._fetch_from_queues(max_num)
 
         if not self._consumer_threads:
             self._start_consumer_threads()
 
-        return self._fetch_from_queue(max_num)
+        return self._fetch_from_local_queue(max_num)
 
     def __next__(self) -> Message:
         """It will always return a message until the consumer is stopped.
@@ -79,55 +91,95 @@ class Consumer:
 
     def stop(self):
         self._stopped = True
-        # TODO: cancel all receive futures
+
+        # Cancel blocking receiving to stop consumer threads
+        for future in self._result_future_sets:
+            future.cancel()
+
+        # Requeue the messages in the local queue
+        if not self.no_prefetch:
+            # Unblock worker threads waiting for the local quue
+            with self._condition:
+                self._condition.notify_all()
 
     def join(self):
         for thread in self._consumer_threads:
             thread.join()
+        # TODO: handle leftover messages
 
-    def _fetch(self, max_num: int) -> list[Message]:
-        """should be thread-safe"""
-        raise NotImplementedError
-
-    def _fetch_from_queue(self, max_num: int) -> list[Message]:
+    def _fetch_from_queues(self, max_num: int) -> list[Message]:
         """should be thread-safe"""
         # TODO: wait for queue
         raise NotImplementedError
 
+    def _fetch_from_local_queue(self, max_num: int) -> list[Message]:
+        """should be thread-safe"""
+        msg = self._local_queue.get(wakeup_until_notify_all=True)
+        if not msg:
+            assert self._stopped
+            return []
+
+        msgs = [msg]
+
+        while len(msgs) < max_num:
+            msg = self._local_queue.get_nowait()
+            if not msg:
+                break
+            msgs.append(msg)
+
+        if self._stopped:
+            # handle leftover messages. This can be handled in the Consumer's
+            # stop or join method because they may end before the end of worker
+            # thread.
+            self._requeue(*msgs)
+            return []
+
+        return msgs
+
     def _start_consumer_threads(self):
-        # FIXME: lock before start
+        """It should be thread-safe"""
+        with self._lock:
+            if self._consumer_threads:
+                return
 
-        # start consumer threads to listen to queues from their brokers
-        # create Message object then put them into worker pool
-        for queue in self.queues:
-            thread = threading.Thread(
-                target=self._consume,
-                args=(queue,),
-                name=f"Consumer-{queue.name}",
-            )
-            self._consumer_threads.append(thread)
-            thread.start()
-
-    def _hook_stop(self, fs):
-        # TODO: put fs into the sets and remove it later
-        pass
+            for queue in self.queues:
+                thread = threading.Thread(
+                    target=self._consume,
+                    args=(queue),
+                    name=f"{self.__class__.__name__}-{queue.name}",
+                )
+                self._consumer_threads.append(thread)
+                thread.start()
 
     def _consume(self, queue: Queue):
-        # TODO: move timeout to a configurable param
-        while not self._stopped:
-            fs = queue.block_receive(wait_time_seconds=self.wait_time_seconds)
-            with self._hook_stop(fs):
-                msgs = fs.result()
-                if msgs:
-                    self._handle(msgs[0])
+        local_queue = self._local_queue
+        consumer_num = len(self.queues)
+        assert local_queue.maxsize > 0
+        batch_size = int(local_queue.maxsize / consumer_num) + 1
 
-    def _handle(self, message: Message):
+        while not self._stopped:
+            future = queue.block_receive(max_number=batch_size)
+            with self._hook_stop_event(future) as hooked:
+                if not hooked:
+                    future.cancel()
+                for msg in future.result():
+                    local_queue.put(msg)
+
+    @contextlib.contextmanager
+    def _hook_stop_event(self, future):
+        """hook the fs.cancel() with consumer's stop event."""
         if self._stopped:
-            self._requeue(message)
+            yield False
             return
 
-    def _requeue(self, message: Message):
+        self._result_future_sets.add(future)
+        yield True
+        self._result_future_sets.remove(future)
+
+    def _requeue(self, *messages: Message):
+        assert self._stopped
         # TODO: add try catch
-        logger.warning("Requeue the message %s after stopping", message.id)
-        if not message.requeue():
-            logger.error("Requeue message error: %s", message.id)
+        for message in messages:
+            logger.warning("Requeue the message %s after stopping", message.id)
+            if not message.requeue():
+                logger.error("Requeue message error: %s", message.id)
