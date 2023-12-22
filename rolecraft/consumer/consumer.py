@@ -105,7 +105,9 @@ class Consumer:
     def join(self):
         for thread in self._consumer_threads:
             thread.join()
-        # TODO: handle leftover messages
+
+        # handle leftover messages
+        self._requeue(*self._local_queue)
 
     def _fetch_from_queues(self, max_num: int) -> list[Message]:
         """should be thread-safe"""
@@ -178,8 +180,12 @@ class Consumer:
 
     def _requeue(self, *messages: Message):
         assert self._stopped
-        # TODO: add try catch
         for message in messages:
             logger.warning("Requeue the message %s after stopping", message.id)
-            if not message.requeue():
-                logger.error("Requeue message error: %s", message.id)
+            try:
+                if not message.requeue():
+                    logger.error("Requeue message error: %s", message.id)
+            except Exception as e:
+                logger.error(
+                    "Requeue message error: %s", message.id, exc_info=e
+                )
