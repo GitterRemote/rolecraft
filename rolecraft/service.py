@@ -1,6 +1,6 @@
 import logging
 import signal
-from .queue import Queue
+from .queue import MessageQueue
 from .config import Config, ConfigFetcher, DefaultConfigFetcher
 from .broker import Broker
 from . import queue_builder as _queue_builder
@@ -16,7 +16,7 @@ class Service:
         self,
         *,
         queue_names: list[str] | None = None,
-        queues: list[Queue] | None = None,
+        queues: list[MessageQueue] | None = None,
         config: Config | None = None,
         queue_configs: dict[str, Config] | None = None,
         broker_configs: dict[Broker, Config] | None = None,

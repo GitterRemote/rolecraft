@@ -1,5 +1,4 @@
 import random
-from rolecraft.queue import Queue
 from rolecraft.message import Message
 from .middleware import Middleware
 
@@ -32,7 +31,9 @@ class Retryable(Middleware):
             return self.queue.nack(message, exception=exception, **kwargs)
         # TODO: options from roles?
         delay_millis = self._compute_delay(retries)
-        return self.queue.retry(message, delay_millis=delay_millis, exception=exception)
+        return self.queue.retry(
+            message, delay_millis=delay_millis, exception=exception
+        )
 
     def _compute_delay(self, retry_attempt: int):
         if retry_attempt == 0:

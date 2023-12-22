@@ -39,7 +39,7 @@ def copy_msg_method_signature[CLS, **P, T](
     return wrapper
 
 
-class Queue[RawMessage](abc.ABC):
+class MessageQueue[RawMessage](abc.ABC):
     def __init__(
         self,
         name: str,

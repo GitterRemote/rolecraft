@@ -1,15 +1,15 @@
 from typing import Self
-from rolecraft.queue import Queue
+from rolecraft.queue import MessageQueue
 
 
-@Queue.register
+@MessageQueue.register
 class Middleware:
     def __init__(self) -> None:
-        self.queue: Queue | None = None
+        self.queue: MessageQueue | None = None
 
     def __getattr__(self, name):
         return getattr(self.queue)
 
-    def __call__(self, queue: Queue) -> Self:
+    def __call__(self, queue: MessageQueue) -> Self:
         self.queue = queue
         return self
