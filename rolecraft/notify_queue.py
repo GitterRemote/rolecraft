@@ -1,8 +1,10 @@
+from collections.abc import Iterator
 import queue
 import threading
+from typing import Iterator
 
 
-class NotifyQueue[Item]:
+class NotifyQueue[Item](Iterator):
     def __init__(self, maxsize: int = 0) -> None:
         self._queue = queue.Queue[Item](maxsize=maxsize)
         self._condition = threading.Condition()
@@ -51,3 +53,10 @@ class NotifyQueue[Item]:
         with self._condition:
             self._all_notfied = True
             self._condition.notify_all()
+
+    # Iterator method
+    def __next__(self) -> Item:
+        try:
+            return self._queue.get_nowait()
+        except queue.Empty:
+            raise StopIteration
