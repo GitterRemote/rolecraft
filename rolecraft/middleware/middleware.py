@@ -8,7 +8,7 @@ class Middleware:
         self.queue: MessageQueue | None = None
 
     def __getattr__(self, name):
-        return getattr(self.queue)
+        return getattr(self.queue, name)
 
     def __call__(self, queue: MessageQueue) -> Self:
         self.queue = queue
