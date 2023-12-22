@@ -2,10 +2,10 @@ from collections.abc import Sequence
 import contextlib
 import logging
 import threading
-from .queue import Queue
-from .message import Message
-from .config import ConfigFetcher
-from . import notify_queue as _notify_queue
+from rolecraft.queue import Queue
+from rolecraft.message import Message
+from rolecraft.config import ConfigFetcher
+from rolecraft import notify_queue as _notify_queue
 
 logger = logging.getLogger(__name__)
 
