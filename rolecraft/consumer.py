@@ -12,6 +12,10 @@ class ConsumerStoppedError(Exception):
     pass
 
 
+class NoPrefetch:
+    pass
+
+
 class Consumer:
     """A consumer that supports thread-safe consume method, which can be used
     by multiple worker together.
@@ -21,22 +25,14 @@ class Consumer:
 
     The main function of the consumer are the strategies to map the consume
     threads to the queues.
-
-    No-prefetch
-    1. the combination of the round robin and block consuming
-    2. no blocking + round robin 1 by 1
-    3. no blocking + random (all consuming threads consume queues randomly)
-
-    Prefetch
-    1. dedicated consume threads + local queue (for cache)
     """
 
     def __init__(
         self,
         queues: Sequence[Queue],
-        no_prefetch: bool,
         config_fetcher: ConfigFetcher | None,
         wait_time_seconds=10 * 60,
+        no_prefetch: NoPrefetch | None = None,
     ) -> None:
         self.queues = queues
         self.no_prefetch = no_prefetch
@@ -114,13 +110,18 @@ class Consumer:
             self._consumer_threads.append(thread)
             thread.start()
 
+    def _hook_stop(self, fs):
+        # TODO: put fs into the sets and remove it later
+        pass
+
     def _consume(self, queue: Queue):
         # TODO: move timeout to a configurable param
         while not self._stopped:
-            msgs = queue.receive(wait_time_seconds=10 * 60)
-            if not msgs:
-                continue
-            self._handle(msgs[0])
+            fs = queue.block_receive(wait_time_seconds=self.wait_time_seconds)
+            with self._hook_stop(fs):
+                msgs = fs.result()
+                if msgs:
+                    self._handle(msgs[0])
 
     def _handle(self, message: Message):
         if self._stopped:
@@ -129,6 +130,6 @@ class Consumer:
 
     def _requeue(self, message: Message):
         # TODO: add try catch
-        logger.info("Requeue the message %s after stopping", message.id)
+        logger.warning("Requeue the message %s after stopping", message.id)
         if not message.requeue():
             logger.error("Requeue message error: %s", message.id)

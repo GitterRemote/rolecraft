@@ -10,9 +10,12 @@ class Meta:
 @dataclasses.dataclass
 class Message:
     id: str
-    data: bytes
     queue: "queue.Queue"
     meta: Meta
+
+    role_name: str
+    args: tuple  # Discussion: if Message doesn't have role access, then args and kwargs cannot be decode properly. However, Message doesn't know how to map the role name to the role itself, neither does Encoder. It is worker's responsibliity to find the correct role by the name in the message.
+    kwargs: dict
 
     # stub following metheods for convenient
     def ack(self, **kwargs):
