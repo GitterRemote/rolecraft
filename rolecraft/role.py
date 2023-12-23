@@ -1,5 +1,10 @@
 from collections.abc import Callable
 import typing
+from typing import Any
+import json
+import dataclasses
+import inspect
+import warnings
 
 from . import broker as _broker
 from .broker import Broker
@@ -11,10 +16,10 @@ SerializedData = str | bytes
 
 
 class ParamsSerializer[D: SerializedData, A: tuple, K: dict]:
-    def serialize(self, args: A, kwds: K) -> D:
+    def serialize(self, fn: Callable, args: A, kwds: K) -> D:
         raise NotImplementedError
 
-    def deserialize(self, data: D) -> tuple[A, K]:
+    def deserialize(self, fn: Callable, data: D) -> tuple[A, K]:
         raise NotImplementedError
 
 
@@ -22,11 +27,42 @@ type ParamsSerializerType[D: SerializedData] = ParamsSerializer[D, tuple, dict]
 
 
 class StrParamsSerializer(ParamsSerializer[str, tuple, dict]):
-    def serialize(self, args: tuple, kwds: dict) -> str:
-        return super().serialize(args, kwds)
+    def serialize(self, fn: Callable, args: tuple, kwds: dict) -> str:
+        args_data = [self._convert(v) for v in args]
+        kwds_data = {k: self._convert(v) for k, v in kwds.items()}
+        return json.dumps(dict(args=args_data, kwds=kwds_data))
 
-    def deserialize(self, data: str) -> tuple[tuple, dict]:
-        return super().deserialize(data)
+    def _convert(self, value):
+        if dataclasses.is_dataclass(value):
+            value = dataclasses.asdict(value)
+        return value
+
+    def _restore(self, param: inspect.Parameter, value):
+        if isinstance(param.annotation, str):
+            warnings.warn("seems annotation doesn't work in runtime")
+            return value
+        if dataclasses.is_dataclass(param.annotation):
+            return param.annotation(**value)
+        else:
+            return value
+
+    def _restore_args(
+        self, sig: inspect.Signature, args: tuple | list
+    ) -> tuple:
+        return tuple(
+            self._restore(param, value)
+            for value, param in zip(args, sig.parameters.values())
+        )
+
+    def _restore_kwds(self, sig: inspect.Signature, kwds: dict) -> dict:
+        raise NotImplementedError
+
+    def deserialize(self, fn: Callable, data: str) -> tuple[tuple, dict]:
+        data_dict = json.loads(data)
+        sig = inspect.signature(fn)
+        args = self._restore_args(sig, data_dict.get("args", ()))
+        kwds = self._restore_kwds(sig, data_dict.get("kwds", {}))
+        return args, kwds
 
 
 class Role[**P, R, D: SerializedData]:
@@ -57,7 +93,7 @@ class Role[**P, R, D: SerializedData]:
         return self.fn(*args, **kwds)
 
     def craft(self, data: D) -> R:
-        args, kwargs = self.serializer.deserialize(data)
+        args, kwargs = self.serializer.deserialize(self.fn, data)
         return self(*args, **kwargs)
 
     def dispatch_message(self, *args: P.args, **kwds: P.kwargs) -> Message:
@@ -87,7 +123,7 @@ class Role[**P, R, D: SerializedData]:
     def _build_message(
         self, queue: MessageQueue, *args: P.args, **kwds: P.kwargs
     ) -> Message:
-        data = self.serializer.serialize(args, kwds)
+        data = self.serializer.serialize(self.fn, args, kwds)
         return Message(role_name=self.name, role_data=data, queue=queue)
 
     def _get_queue(
