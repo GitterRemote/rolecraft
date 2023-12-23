@@ -28,7 +28,7 @@ class Consumer(abc.ABC, Iterator):
         """The method is thread safe.
 
         Raises:
-            ConsumerStoppedError: when stopped
+            ConsumerStoppedError: when call this method after stop() method is called. If the stop() is called during the process of this method, then it will return empty or partial result.
         """
         raise NotImplementedError
 

@@ -14,23 +14,18 @@ class ConsumerBase(Consumer):
         self._stopped = False
 
     def consume(self, max_num=1) -> list[Message]:
-        """The method is thread safe.
-
-        Raises:
-            ConsumerStoppedError: when stopped
-        """
         if self._stopped:
             raise ConsumerStoppedError
-        return self._fetch_from_queues(max_num)
+        msgs = self._fetch_from_queues(max_num)
+        if self._stopped:
+            # handle leftover messages. This can not be handled in the
+            # Consumer's stop or join methods because they may end before the
+            # end of worker thread.
+            self._requeue(*msgs)
+            return []
+        return msgs
 
     def __next__(self) -> Message:
-        """It will always return a message until the consumer is stopped.
-
-        The method is thread safe.
-
-        Raises:
-            StopIteration: when stopped
-        """
         while True:
             try:
                 msgs = self.consume()
@@ -53,7 +48,7 @@ class ConsumerBase(Consumer):
 
     @abc.abstractmethod
     def _fetch_from_queues(self, max_num: int) -> list[Message]:
-        """should be thread-safe"""
+        """It should be made thread-safe. It is necessary to check the stopped flag if it is expected to run for a prolonged period and return a partial result. The parant method consume() will requeue them if necessary."""
         raise NotImplementedError
 
     def _requeue(self, *messages: Message):
