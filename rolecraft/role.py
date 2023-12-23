@@ -7,7 +7,7 @@ from .role_hanger import RoleHanger
 from .queue import MessageQueue
 
 
-class ParamsSerializer[D: str | bytes, A, K]:
+class ParamsSerializer[D: str | bytes, A: tuple, K: dict]:
     def serialize(self, args: A, kwds: K) -> D:
         raise NotImplementedError
 
@@ -15,14 +15,14 @@ class ParamsSerializer[D: str | bytes, A, K]:
         raise NotImplementedError
 
 
-class Role[**P, R, D]:
+class Role[**P, R, D: str | bytes]:
     def __init__(
         self,
         fn: Callable[P, R],
         name: str | None = None,
         *,
         queue_name: str,
-        serializer: ParamsSerializer,
+        serializer: ParamsSerializer[D, tuple, dict],
         role_hanger: RoleHanger,
         **options,
     ) -> None:
@@ -42,7 +42,7 @@ class Role[**P, R, D]:
     def __call__(self, *args: P.args, **kwds: P.kwargs) -> R:
         return self.fn(*args, **kwds)
 
-    def craft(self, data) -> R:
+    def craft(self, data: D) -> R:
         args, kwargs = self.serializer.deserialize(data)
         return self(*args, **kwargs)
 
