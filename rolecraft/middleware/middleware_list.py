@@ -4,9 +4,11 @@ import functools
 from .middleware import Middleware
 from .retryable import Retryable
 
+M = Middleware
+
 
 @dataclasses.dataclass(init=False, eq=False, order=False, repr=False)
-class MiddlewareList[M: Middleware](collections.abc.MutableSequence[M]):
+class MiddlewareList(collections.abc.MutableSequence[M]):
     _middlewares: list[M]
     retryable: Retryable | None = None
 

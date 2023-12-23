@@ -46,6 +46,7 @@ class QueueBuilder:
 
     def _wrap(self, queue: MessageQueue) -> MessageQueue:
         config = self.config_fetcher(queue.name, queue.broker)
+        assert config.middlewares
         for middleware in config.middlewares:
             queue = middleware(queue)
             assert isinstance(queue, MessageQueue)
