@@ -1,4 +1,5 @@
 import abc
+import typing
 import functools
 from collections.abc import Callable
 from typing import Any, Concatenate
@@ -72,7 +73,7 @@ class MessageQueue[RawMessage](abc.ABC):
         future.result = lambda: [  # type: ignore
             self.encoder.decode(m) for m in future.result()
         ]
-        return future  # type: ignore
+        return typing.cast(ReceiveFuture[Message], future)
 
     @copy_method_signature(Broker[Message].receive)
     def receive(self, *args, **kwargs):
