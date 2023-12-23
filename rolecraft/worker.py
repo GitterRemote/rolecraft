@@ -2,14 +2,27 @@ import logging
 from .message import Message
 from .worker_pool import WorkerPool, ThreadWorkerPool
 from .consumer import Consumer
+from .role_hanger import RoleHanger
 
 logger = logging.getLogger(__name__)
 
 
+class RoleMissingError(Exception):
+    def __init__(self, message: Message, *args: object) -> None:
+        self.message = message
+        super().__init__(*args)
+
+
 class Worker:
-    def __init__(self, worker_pool: WorkerPool, consumer: Consumer) -> None:
+    def __init__(
+        self,
+        worker_pool: WorkerPool,
+        consumer: Consumer,
+        role_hanger: RoleHanger,
+    ) -> None:
         self.worker_pool = worker_pool
         self.consumer = consumer
+        self.role_hanger = role_hanger
 
         self._stopped = False
 
@@ -51,11 +64,12 @@ class Worker:
             self._handle_result(message, result)
 
     def _craft(self, message: Message):
-        # TODO: get role and its function, then call function
-        raise NotImplementedError
+        role = self.role_hanger.pick(message.role_name)
+        if not role:
+            raise RoleMissingError(message=message)
+        return role.craft(message.role_data)
 
     def _handle_leftover(self, message: Message):
-        # TODO: log and requeue
         logger.warning(
             "requeuing leftover message as worker stopped: %s",
             message.id,
