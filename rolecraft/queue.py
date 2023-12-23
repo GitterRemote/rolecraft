@@ -3,7 +3,7 @@ import functools
 from collections.abc import Callable
 from typing import Any, Concatenate
 
-from .broker import Broker
+from .broker import Broker, ReceiveFuture
 from .message import Message
 from .encoder import Encoder
 
@@ -14,7 +14,7 @@ def copy_method_signature[CLS, **P, T](
     source: Callable[Concatenate[Any, str, P], T],
 ) -> Callable[[Callable[..., T]], Callable[Concatenate[CLS, P], T]]:
     def wrapper(target: Callable[..., T]) -> Callable[Concatenate[CLS, P], T]:
-        @functools.wraps(source)
+        @functools.wraps(target)
         def wrapped(self: CLS, /, *args: P.args, **kwargs: P.kwargs) -> T:
             return target(self, *args, **kwargs)
 
@@ -30,9 +30,11 @@ def copy_msg_method_signature[CLS, **P, T](
     def wrapper(
         target: Callable[..., T],
     ) -> Callable[Concatenate[CLS, Message, P], T]:
-        @functools.wraps(source)
-        def wrapped(self: CLS, /, *args: P.args, **kwargs: P.kwargs) -> T:
-            return target(self, *args, **kwargs)
+        @functools.wraps(target)
+        def wrapped(
+            self: CLS, /, message: Message, *args: P.args, **kwargs: P.kwargs
+        ) -> T:
+            return target(self, message, *args, **kwargs)
 
         return wrapped
 
@@ -62,11 +64,15 @@ class MessageQueue[RawMessage](abc.ABC):
         queue."""
         kwargs.setdefault("wait_time_seconds", self.wait_time_seconds)
         future = self.broker.block_receive(self.name, *args, **kwargs)
-        future.result = self._wrap_result(future.result)
-        return future
+        return self._wrap_future(future)
 
-    def _wrap_result(self, fn: Callable[..., list[RawMessage]]):
-        return lambda: [self.encoder.decode(m) for m in fn()]
+    def _wrap_future(
+        self, future: ReceiveFuture[RawMessage]
+    ) -> ReceiveFuture[Message]:
+        future.result = lambda: [  # type: ignore
+            self.encoder.decode(m) for m in future.result()
+        ]
+        return future  # type: ignore
 
     @copy_method_signature(Broker[Message].receive)
     def receive(self, *args, **kwargs):
