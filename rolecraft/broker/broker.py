@@ -18,12 +18,11 @@ class Broker[Message](abc.ABC):
     def enqueue(
         self,
         queue_name: str,
-        data: bytes,
+        message: Message,
         *,
         priority: int = 50,
         delay_millis: int = 0,
         create_queue: bool = False,
-        message_id=None,
         **kwargs,
     ) -> str:
         raise NotImplementedError

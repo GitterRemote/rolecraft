@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import TYPE_CHECKING
+import typing
 
-if TYPE_CHECKING:
+if typing.TYPE_CHECKING:
     from .queue import MessageQueue
 
 
@@ -14,17 +14,20 @@ class Meta:
     retries: int | None = None
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(kw_only=True)
 class Message:
-    id: str
-    meta: Meta
+    id: str = ""
+    meta: Meta = dataclasses.field(default_factory=Meta)
 
     role_name: str
-    role_data: str | bytes | None
+    role_data: str | bytes | None = None
 
     queue: MessageQueue
 
-    # stub following metheods for convenient
+    # Stub queue metheods for convenient
+    def enqueue(self, **kwargs):
+        return self.queue.enqueue(self, **kwargs)
+
     def ack(self, **kwargs):
         return self.queue.ack(self, **kwargs)
 
