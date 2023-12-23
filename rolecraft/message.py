@@ -1,5 +1,10 @@
+from __future__ import annotations
+
 import dataclasses
-from . import queue
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .queue import MessageQueue
 
 
 @dataclasses.dataclass
@@ -17,7 +22,7 @@ class Message:
     role_name: str
     role_data: str | bytes | None
 
-    queue: "queue.MessageQueue"
+    queue: MessageQueue
 
     # stub following metheods for convenient
     def ack(self, **kwargs):
