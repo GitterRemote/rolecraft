@@ -26,23 +26,23 @@ class Retryable(Middleware):
         super().__init__()
 
     def nack(self, message: Message, exception: Exception, **kwargs):
+        assert self.queue, "Middleware Retryable is not initialized"
         retries = message.meta.retries
         if retries and retries >= self.max_retries:
             return self.queue.nack(message, exception=exception, **kwargs)
-        # TODO: options from roles?
-        delay_millis = self._compute_delay(retries)
+        delay_millis = int(self._compute_delay_millis(retries))
         return self.queue.retry(
             message, delay_millis=delay_millis, exception=exception
         )
 
-    def _compute_delay(self, retry_attempt: int):
+    def _compute_delay_millis(self, retry_attempt: int):
         if retry_attempt == 0:
             return self.base_backoff_millis
 
         if retry_attempt == 0:
             return self.base_backoff_millis
 
-        backoff_time = self.base_backoff_millis * (
+        backoff_time: float = self.base_backoff_millis * (
             self.exponential_factor**retry_attempt
         )
         if (
