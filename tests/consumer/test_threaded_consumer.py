@@ -22,14 +22,17 @@ def consumer(threaded_consumer):
 
 
 class TestWithMockedQueue:
-    def create_future(self, *rv, timeout=0):
+    def create_future(self, queue, *rv, timeout=0):
         @dataclasses.dataclass
         class Message:
             id: str
 
+            def requeue(self, *args, **kwargs):
+                return queue.requeue(self, *args, **kwargs)
+
         class ResultFuture:
             def __init__(self, *rv, timeout=0) -> None:
-                self.rv = list(map(Message, map(str, rv)))
+                self.rv = list(rv)
                 self.ev = threading.Event()
                 self.timeout = timeout
 
@@ -43,6 +46,8 @@ class TestWithMockedQueue:
             def cancel(self):
                 self.ev.set()
 
+        rv = map(Message, map(str, rv))
+
         return ResultFuture(*rv, timeout=timeout)
 
     @pytest.fixture()
@@ -54,14 +59,8 @@ class TestWithMockedQueue:
         q = mock.MagicMock(MessageQueue)
         q.name = "MockedQueue"
 
-        def block_receive(self, *args, **kwargs):
-            return self.create_future()
-
         q.block_receive.side_effect = [
-            self.create_future(1),
-            self.create_future(2),
-            self.create_future(3),
-            self.create_future(4),
+            self.create_future(q, str(i)) for i in range(1, 101)
         ]
         yield q
 
@@ -69,7 +68,7 @@ class TestWithMockedQueue:
     def queues(self, queue):
         yield [queue]
 
-    def test_consume(self, consumer: ThreadedConsumer, queue: mock.MagicMock):
+    def test_consume(self, consumer: ThreadedConsumer, queue):
         rv = []
 
         def consume():
@@ -85,6 +84,11 @@ class TestWithMockedQueue:
         for t in threads:
             t.join()
         assert len(rv) == 2
-        # assert rv == [[1], [2]]
-        # FIXME: fix Message.requeue
-        # queue.requeue.assert_any_call(2)
+        for idx, msgs in enumerate(rv):
+            assert len(msgs) == 1
+            assert msgs[0].id == str(idx + 1)
+
+        consumer.stop()
+        consumer.join()
+        assert queue.block_receive.call_count >= 2
+        assert queue.requeue.call_count == queue.block_receive.call_count - 2
