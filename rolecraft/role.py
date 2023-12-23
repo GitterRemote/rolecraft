@@ -1,4 +1,5 @@
 from collections.abc import Callable
+import typing
 
 from . import broker as _broker
 from .broker import Broker
@@ -6,8 +7,10 @@ from .message import Message
 from .role_hanger import RoleHanger
 from .queue import MessageQueue
 
+SerializedData = str | bytes
 
-class ParamsSerializer[D: str | bytes, A: tuple, K: dict]:
+
+class ParamsSerializer[D: SerializedData, A: tuple, K: dict]:
     def serialize(self, args: A, kwds: K) -> D:
         raise NotImplementedError
 
@@ -15,14 +18,25 @@ class ParamsSerializer[D: str | bytes, A: tuple, K: dict]:
         raise NotImplementedError
 
 
-class Role[**P, R, D: str | bytes]:
+type ParamsSerializerType[D: SerializedData] = ParamsSerializer[D, tuple, dict]
+
+
+class StrParamsSerializer(ParamsSerializer[str, tuple, dict]):
+    def serialize(self, args: tuple, kwds: dict) -> str:
+        return super().serialize(args, kwds)
+
+    def deserialize(self, data: str) -> tuple[tuple, dict]:
+        return super().deserialize(data)
+
+
+class Role[**P, R, D: SerializedData]:
     def __init__(
         self,
         fn: Callable[P, R],
         name: str | None = None,
         *,
         queue_name: str,
-        serializer: ParamsSerializer[D, tuple, dict],
+        serializer: ParamsSerializerType[D],
         role_hanger: RoleHanger,
         **options,
     ) -> None:
@@ -91,3 +105,32 @@ class Role[**P, R, D: str | bytes]:
         if not broker:
             raise RuntimeError("Broker is required to be set or bound")
         return broker
+
+
+def role[**P, R, D: SerializedData](
+    fn: Callable[P, R],
+    name: str | None = None,
+    *,
+    queue_name: str = "default",
+    serializer: ParamsSerializerType[D] | None,
+    role_hanger=RoleHanger(),
+    **options,
+) -> Role[P, R, D] | Role[P, R, str]:
+    if serializer is not None:
+        return Role(
+            fn,
+            name=name,
+            queue_name=queue_name,
+            serializer=serializer,
+            role_hanger=role_hanger,
+            **options,
+        )
+    else:
+        return Role(
+            fn,
+            name=name,
+            queue_name=queue_name,
+            serializer=StrParamsSerializer(),
+            role_hanger=role_hanger,
+            **options,
+        )
