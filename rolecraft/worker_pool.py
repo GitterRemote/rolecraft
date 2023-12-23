@@ -50,6 +50,8 @@ class ThreadWorkerPool(WorkerPool):
             self._execute_fn(fn, args, kwargs)
             return
 
+        assert self._executor
+
         if len(self._futures) >= self.thread_num:
             raise RuntimeError("Worker pool is full!")
 
