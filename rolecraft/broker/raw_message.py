@@ -1,14 +1,16 @@
 import dataclasses
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(kw_only=True)
 class BytesRawMessage:
-    id: str
+    id: str = ""
     data: bytes
 
 
-@dataclasses.dataclass
-class HeaderBytesRawMessage:
-    id: str
+@dataclasses.dataclass(kw_only=True)
+class HeaderBytesRawMessage(BytesRawMessage):
+    id: str = ""
     data: bytes
-    headers: dict[str, str | int | float]
+    headers: dict[str, str | int | float] = dataclasses.field(
+        default_factory=dict
+    )
