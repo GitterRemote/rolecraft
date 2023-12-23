@@ -7,10 +7,10 @@ from .retryable import Retryable
 
 @dataclasses.dataclass(init=False, eq=False, order=False, repr=False)
 class MiddlewareList[M: Middleware](collections.abc.MutableSequence[M]):
-    _middlewares: list[Middleware]
+    _middlewares: list[M]
     retryable: Retryable | None = None
 
-    def __init__(self, middlewares: list[Middleware] = None) -> None:
+    def __init__(self, middlewares: list[M] | None = None) -> None:
         middlewares = middlewares or []
 
         self._set_field("_middlewares", middlewares)
@@ -18,15 +18,15 @@ class MiddlewareList[M: Middleware](collections.abc.MutableSequence[M]):
         for middleware in middlewares:
             self._set_middleware(middleware)
 
-    def _set_middleware(self, middleware: Middleware):
+    def _set_middleware(self, middleware: M):
         field_name = self._field_name_for(middleware)
         self._set_field(field_name, middleware)
 
-    def _remove_middleware(self, middleware: Middleware):
+    def _remove_middleware(self, middleware: M):
         field_name = self._field_name_for(middleware)
         self._set_field(field_name, None)
 
-    def _field_name_for(self, middleware: Middleware) -> str:
+    def _field_name_for(self, middleware: M) -> str:
         if isinstance(middleware, Retryable):
             return "retryable"
         raise TypeError(f"Unknonw middleware type: {middleware}")
