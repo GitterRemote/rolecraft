@@ -8,10 +8,10 @@ from rolecraft import encoder as _encoder_mod
 
 @dataclasses.dataclass
 class Config:
-    middlewares: list[Middleware] | MiddlewareList | None
+    middlewares: list[Middleware] | MiddlewareList | None = None
 
-    consumer_wait_time_seconds: int | None
-    encoder: Encoder | None
+    consumer_wait_time_seconds: int | None = None
+    encoder: Encoder | None = None
 
     @classmethod
     def default(cls) -> Self:
