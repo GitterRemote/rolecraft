@@ -2,10 +2,10 @@ import abc
 import dataclasses
 import json
 import struct
+import typing
 
-
-from .message import Message, Meta
 from .broker import BytesRawMessage, HeaderBytesRawMessage
+from .message import Message, Meta
 
 
 class Encoder[RawMessage](abc.ABC):
@@ -39,7 +39,7 @@ class HeaderBytesEncoder(Encoder[HeaderBytesRawMessage]):
         for field in dataclasses.fields(meta):
             value = getattr(meta, field.name)
             if value is not None:
-                assert type(value) in self._META_VALUE_TYPE
+                # assert type(value) in self._META_VALUE_TYPE
                 data[field.name] = value
         return data
 
@@ -48,8 +48,30 @@ class HeaderBytesEncoder(Encoder[HeaderBytesRawMessage]):
         for field in dataclasses.fields(Meta):
             value = data.get(field.name)
             if value is not None:
-                setattr(meta, field.name, field.type(value))
+                setattr(
+                    meta, field.name, self._convert_type(value, field.type)
+                )
         return meta
+
+    def _convert_type(self, value, field_type):
+        if isinstance(field_type, str):
+            if "int" in field_type:
+                return int(value)
+            elif "str" in field_type:
+                return str(value)
+            elif "float" in field_type:
+                return float(field_type)
+            else:
+                raise RuntimeError(
+                    f"Unknown field type {field_type} for {value}"
+                )
+
+        for t in typing.get_args(field_type):
+            if type(None) is t:
+                continue
+            return t(value)
+        else:
+            raise RuntimeError(f"Unknown field type {field_type} for {value}")
 
     def decode(
         self, raw_message: HeaderBytesRawMessage, *, queue, **kwargs
