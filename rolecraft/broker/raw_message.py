@@ -11,4 +11,4 @@ class BytesRawMessage:
 class HeaderBytesRawMessage:
     id: str
     data: bytes
-    headers: dict[str, str]
+    headers: dict[str, str | int | float]
