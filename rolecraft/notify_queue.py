@@ -1,7 +1,6 @@
 from collections.abc import Iterator
 import queue
 import threading
-from typing import Iterator
 
 
 class NotifyQueue[Item](Iterator):
@@ -33,8 +32,13 @@ class NotifyQueue[Item](Iterator):
                 if item is not None:
                     return item
 
+            # avoid dead-lock: don't wait if all notified
+            if wakeup_until_notify_all and self._all_notfied:
+                return
+
             while True:
                 self._condition.wait()
+
                 item = self.get_nowait()
                 if item is not None:
                     return item

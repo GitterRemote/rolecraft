@@ -1,6 +1,8 @@
 from collections.abc import Sequence
 import contextlib
 import logging
+import math
+import time
 import threading
 from rolecraft.queue import MessageQueue
 from rolecraft.message import Message
@@ -36,24 +38,49 @@ class ThreadedConsumer(ConsumerBase):
         for future in self._result_future_sets:
             future.cancel()
 
-        # Requeue the messages in the local queue
-        if not self.no_prefetch:
-            # Unblock worker threads waiting for the local quue
-            self._local_queue.notify_all()
+        # Unblock worker threads waiting for the local quue
+        self._local_queue.notify_all()
 
     def join(self):
         super().join()
 
+        # Handle leftover messages
+        # Using a requeuing thread to fetch messages from the local queue to
+        # unblock consumer threads
+        t, ev = self._requeue_local_queue_messages()
+
+        # Join consumer threads
+        # it is possible that a consumer thread is blocked by the put method.
         for thread in self._consumer_threads:
             thread.join()
 
-        # handle leftover messages
-        self._requeue(*self._local_queue)
+        ev.set()
+        t.join()
+
+    def _requeue_local_queue_messages(
+        self,
+    ) -> tuple[threading.Thread, threading.Event]:
+        consumer_stopped = threading.Event()
+
+        def requeue():
+            while not consumer_stopped.is_set():
+                msg = self._local_queue.get_nowait()
+                if msg:
+                    self._requeue(msg)
+                else:
+                    time.sleep(0.1)
+            self._requeue(*self._local_queue)
+
+        t = threading.Thread(
+            target=requeue, name=f"{self.__class__.__name__}-Requeue"
+        )
+        t.start()
+        return t, consumer_stopped
 
     def _fetch_from_queues(self, max_num: int) -> list[Message]:
         if not self._consumer_threads:
             self._start_consumer_threads()
-        return self._fetch_from_local_queue()
+        return self._fetch_from_local_queue(max_num)
 
     def _fetch_from_local_queue(self, max_num: int) -> list[Message]:
         """should be thread-safe"""
@@ -70,13 +97,6 @@ class ThreadedConsumer(ConsumerBase):
                 break
             msgs.append(msg)
 
-        if self._stopped:
-            # handle leftover messages. This can be handled in the Consumer's
-            # stop or join method because they may end before the end of worker
-            # thread.
-            self._requeue(*msgs)
-            return []
-
         return msgs
 
     def _start_consumer_threads(self):
@@ -88,7 +108,7 @@ class ThreadedConsumer(ConsumerBase):
             for queue in self.queues:
                 thread = threading.Thread(
                     target=self._consume,
-                    args=(queue),
+                    args=(queue,),
                     name=f"{self.__class__.__name__}-{queue.name}",
                 )
                 self._consumer_threads.append(thread)
@@ -98,7 +118,7 @@ class ThreadedConsumer(ConsumerBase):
         local_queue = self._local_queue
         consumer_num = len(self.queues)
         assert local_queue.maxsize > 0
-        batch_size = int(local_queue.maxsize / consumer_num) + 1
+        batch_size = math.ceil(local_queue.maxsize / consumer_num)
 
         while not self._stopped:
             future = queue.block_receive(max_number=batch_size)
