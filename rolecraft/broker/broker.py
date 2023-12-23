@@ -63,8 +63,8 @@ class Broker[Message](abc.ABC):
     def ack(
         self,
         message: Message,
-        *,
         queue_name: str | None = None,
+        *,
         result=None,
     ) -> bool:
         """Marks the task as completed successfully
@@ -79,8 +79,8 @@ class Broker[Message](abc.ABC):
     def nack(
         self,
         message: Message,
-        *,
         queue_name: str | None = None,
+        *,
         exception: Exception,
     ) -> bool:
         """Marks the task as failed.
@@ -93,9 +93,7 @@ class Broker[Message](abc.ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def requeue(
-        self, message: Message, *, queue_name: str | None = None
-    ) -> bool:
+    def requeue(self, message: Message, queue_name: str | None = None) -> bool:
         """Requeue the task when give back the prefetched task.
         This will mark the task with the idle status.
 
@@ -108,8 +106,8 @@ class Broker[Message](abc.ABC):
     def retry(
         self,
         message: Message,
-        *,
         queue_name: str | None = None,
+        *,
         delay_millis: int = 0,
         exception: Exception | None = None,
     ) -> bool:
