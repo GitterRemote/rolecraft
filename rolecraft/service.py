@@ -21,6 +21,7 @@ class Service:
         queue_configs: dict[str, Config] | None = None,
         broker_configs: dict[Broker, Config] | None = None,
         config_fetcher: ConfigFetcher | None = None,
+        consumer_factory=_consumer.DefaultConsumerFactory(),
     ) -> None:
         # TODO: move into start method
         self.config_fetcher = config_fetcher or DefaultConfigFetcher(
@@ -34,10 +35,10 @@ class Service:
         ).build()
 
         self.worker_pool = _worker_pool.ThreadWorkerPool()
-        self.consumer: _consumer.Consumer = _consumer.DefaultConsumer(
-            queues=self.queues
+        self.consumer = consumer_factory(queues=self.queues)
+        self.worker = _worker.Worker(
+            worker_pool=self.worker_pool, consumer=self.consumer
         )
-        self.worker = _worker.Worker(worker_pool=self.worker_pool)
 
     def start(self, *, thread_num: int):
         """
