@@ -1,70 +1,19 @@
 from collections.abc import Callable
-import json
-import dataclasses
-import inspect
-import warnings
 
 from rolecraft import broker as _broker
 from rolecraft.broker import Broker
 from rolecraft.message import Message
 from rolecraft.queue import MessageQueue
+
 from .role_hanger import RoleHanger
-
-
-SerializedData = str | bytes
-
-
-class ParamsSerializer[D: SerializedData, A: tuple, K: dict]:
-    def serialize(self, fn: Callable, args: A, kwds: K) -> D:
-        raise NotImplementedError
-
-    def deserialize(self, fn: Callable, data: D) -> tuple[A, K]:
-        raise NotImplementedError
-
-
-type ParamsSerializerType[D: SerializedData] = ParamsSerializer[D, tuple, dict]
-
-
-class StrParamsSerializer(ParamsSerializer[str, tuple, dict]):
-    def serialize(self, fn: Callable, args: tuple, kwds: dict) -> str:
-        args_data = [self._convert(v) for v in args]
-        kwds_data = {k: self._convert(v) for k, v in kwds.items()}
-        return json.dumps(dict(args=args_data, kwds=kwds_data))
-
-    def _convert(self, value):
-        if dataclasses.is_dataclass(value):
-            value = dataclasses.asdict(value)
-        return value
-
-    def _restore(self, param: inspect.Parameter, value):
-        if isinstance(param.annotation, str):
-            warnings.warn("seems annotation doesn't work in runtime")
-            return value
-        if dataclasses.is_dataclass(param.annotation):
-            return param.annotation(**value)
-        else:
-            return value
-
-    def _restore_args(
-        self, sig: inspect.Signature, args: tuple | list
-    ) -> tuple:
-        return tuple(
-            self._restore(param, value)
-            for value, param in zip(args, sig.parameters.values())
-        )
-
-    def _restore_kwds(self, sig: inspect.Signature, kwds: dict) -> dict:
-        raise NotImplementedError
-
-    def deserialize(self, fn: Callable, data: str) -> tuple[tuple, dict]:
-        data_dict = json.loads(data)
-        sig = inspect.signature(fn)
-        args = self._restore_args(sig, data_dict.get("args", ()))
-        kwds = self._restore_kwds(sig, data_dict.get("kwds", {}))
-        return args, kwds
+from .serializer import ParamsSerializerType, SerializedData
 
 
 class Role[**P, R, D: SerializedData]:
+    """Role is a function wrapper that is extended with the functions related to
+    the broker and message, such as send function data to the queue and
+    """
+
     def __init__(
         self,
         fn: Callable[P, R],
@@ -72,6 +21,7 @@ class Role[**P, R, D: SerializedData]:
         *,
         queue_name: str,
         serializer: ParamsSerializerType[D],
+        deserializer: ParamsSerializerType[SerializedData] | None = None,
         role_hanger: RoleHanger,
         **options,
     ) -> None:
@@ -80,6 +30,7 @@ class Role[**P, R, D: SerializedData]:
         self.queue_name = queue_name
 
         self.serializer = serializer
+        self.deserializer = deserializer
         self.role_hanger = role_hanger
 
         self.options = options
@@ -91,8 +42,19 @@ class Role[**P, R, D: SerializedData]:
     def __call__(self, *args: P.args, **kwds: P.kwargs) -> R:
         return self.fn(*args, **kwds)
 
-    def craft(self, data: D) -> R:
-        args, kwargs = self.serializer.deserialize(self.fn, data)
+    def craft(self, message: Message) -> R:
+        return self._craft(message.role_data)
+
+    def _craft(self, data: SerializedData | D) -> R:
+        if not data:
+            return self()
+
+        if self.deserializer:
+            args, kwargs = self.deserializer.deserialize(self.fn, data)
+        elif self.serializer.support(data):
+            args, kwargs = self.serializer.deserialize(self.fn, data)
+        else:
+            raise RuntimeError("Unsupported data type")
         return self(*args, **kwargs)
 
     def dispatch_message(self, *args: P.args, **kwds: P.kwargs) -> Message:
@@ -140,32 +102,3 @@ class Role[**P, R, D: SerializedData]:
         if not broker:
             raise RuntimeError("Broker is required to be set or bound")
         return broker
-
-
-def role[**P, R, D: SerializedData](
-    fn: Callable[P, R],
-    name: str | None = None,
-    *,
-    queue_name: str = "default",
-    serializer: ParamsSerializerType[D] | None,
-    role_hanger=RoleHanger(),  # FIXME: need a global role hanger
-    **options,
-) -> Role[P, R, D] | Role[P, R, str]:
-    if serializer is not None:
-        return Role(
-            fn,
-            name=name,
-            queue_name=queue_name,
-            serializer=serializer,
-            role_hanger=role_hanger,
-            **options,
-        )
-    else:
-        return Role(
-            fn,
-            name=name,
-            queue_name=queue_name,
-            serializer=StrParamsSerializer(),
-            role_hanger=role_hanger,
-            **options,
-        )
