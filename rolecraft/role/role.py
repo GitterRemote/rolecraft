@@ -1,16 +1,15 @@
 from collections.abc import Callable
-import typing
-from typing import Any
 import json
 import dataclasses
 import inspect
 import warnings
 
-from . import broker as _broker
-from .broker import Broker
-from .message import Message
+from rolecraft import broker as _broker
+from rolecraft.broker import Broker
+from rolecraft.message import Message
+from rolecraft.queue import MessageQueue
 from .role_hanger import RoleHanger
-from .queue import MessageQueue
+
 
 SerializedData = str | bytes
 
@@ -149,7 +148,7 @@ def role[**P, R, D: SerializedData](
     *,
     queue_name: str = "default",
     serializer: ParamsSerializerType[D] | None,
-    role_hanger=RoleHanger(),
+    role_hanger=RoleHanger(),  # FIXME: need a global role hanger
     **options,
 ) -> Role[P, R, D] | Role[P, R, str]:
     if serializer is not None:

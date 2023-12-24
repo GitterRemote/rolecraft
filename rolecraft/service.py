@@ -3,10 +3,13 @@ import signal
 from .queue import MessageQueue
 from .config import Config, ConfigFetcher, DefaultConfigFetcher
 from .broker import Broker
+from .role import RoleHanger
 from . import queue_builder as _queue_builder
 from . import worker_pool as _worker_pool
 from . import consumer as _consumer
 from . import worker as _worker
+from . import role as _role
+
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +25,7 @@ class Service:
         broker_configs: dict[Broker, Config] | None = None,
         config_fetcher: ConfigFetcher | None = None,
         consumer_factory=_consumer.DefaultConsumerFactory(),
+        role_hanger: RoleHanger | None = None,
     ) -> None:
         # TODO: move into start method
         self.config_fetcher = config_fetcher or DefaultConfigFetcher(
@@ -37,7 +41,9 @@ class Service:
         self.worker_pool = _worker_pool.ThreadWorkerPool()
         self.consumer = consumer_factory(queues=self.queues)
         self.worker = _worker.Worker(
-            worker_pool=self.worker_pool, consumer=self.consumer
+            worker_pool=self.worker_pool,
+            consumer=self.consumer,
+            role_hanger=role_hanger or _role.role_hanger,
         )
 
     def start(self, *, thread_num: int):
