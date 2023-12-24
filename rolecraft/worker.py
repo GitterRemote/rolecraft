@@ -67,7 +67,7 @@ class Worker:
         role = self.role_hanger.pick(message.role_name)
         if not role:
             raise RoleMissingError(message=message)
-        return role.craft(message.role_data)
+        return role.craft(message)
 
     def _handle_leftover(self, message: Message):
         logger.warning(

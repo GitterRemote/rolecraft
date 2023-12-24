@@ -23,4 +23,4 @@ class RoleHanger(collections.UserDict[str, Role]):
         return self.get(role_name)
 
 
-role_hanger = RoleHanger()
+default_role_hanger = RoleHanger()
