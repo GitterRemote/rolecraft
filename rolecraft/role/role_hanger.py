@@ -21,3 +21,6 @@ class RoleHanger(collections.UserDict[str, Role]):
 
     def pick(self, role_name: str) -> Role | None:
         return self.get(role_name)
+
+
+role_hanger = RoleHanger()

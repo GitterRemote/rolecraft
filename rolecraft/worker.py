@@ -2,7 +2,7 @@ import logging
 from .message import Message
 from .worker_pool import WorkerPool, ThreadWorkerPool
 from .consumer import Consumer
-from .role_hanger import RoleHanger
+from .role import RoleHanger
 
 logger = logging.getLogger(__name__)
 
