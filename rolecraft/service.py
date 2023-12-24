@@ -43,7 +43,7 @@ class Service:
         self.worker = _worker.Worker(
             worker_pool=self.worker_pool,
             consumer=self.consumer,
-            role_hanger=role_hanger or _role.role_hanger,
+            role_hanger=role_hanger or _role.default_role_hanger,
         )
 
     def start(self, *, thread_num: int):
