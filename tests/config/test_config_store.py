@@ -142,3 +142,60 @@ class TestDefaultOnlyStore:
             dataclasses.replace(store.queue_config, broker=another_broker)
             == config
         )
+
+    def test_fetch_queue_config_with_encoder(self, store, encoder):
+        config = store("any_queue_name", encoder=encoder)
+
+        assert config.encoder is encoder
+        assert (
+            dataclasses.replace(store.queue_config, encoder=encoder) == config
+        )
+
+    def test_fetch_queue_config_with_encoder_and_broker(
+        self, store, broker, encoder
+    ):
+        config = store(encoder=encoder, broker=broker)
+
+        assert config.encoder is encoder
+        assert config.broker is broker
+        assert (
+            dataclasses.replace(
+                store.queue_config,
+                broker=broker,
+                encoder=encoder,
+            )
+            == config
+        )
+
+    def test_fetch_queue_config_with_middlewares(self, store, middlewares):
+        config = store("any_queue_name", middlewares=middlewares)
+
+        assert config.middlewares is middlewares
+        assert (
+            dataclasses.replace(store.queue_config, middlewares=middlewares)
+            == config
+        )
+
+    def test_fetch_queue_config_with_middlewares_and_broker(
+        self, store, broker, middlewares
+    ):
+        config = store(middlewares=middlewares, broker=broker)
+
+        assert config.middlewares is middlewares
+        assert config.broker is broker
+        assert (
+            dataclasses.replace(
+                store.queue_config,
+                broker=broker,
+                middlewares=middlewares,
+            )
+            == config
+        )
+
+
+class TestQueueConfigOnlyStore:
+    pass
+
+
+class TestBrokerQueueConfigOnlyStore:
+    pass
