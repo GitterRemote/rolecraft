@@ -23,11 +23,15 @@ class ConfigFetcher(Protocol):
         ...
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(kw_only=True)
 class ConfigStore(ConfigFetcher):
-    queue_configs: dict[str, QueueConfig[Any]]
-    broker_queue_configs: dict[Broker[Any], QueueConfig[Any]]
     queue_config: QueueConfig[Any] | IncompleteQueueConfig[Any]
+    queue_configs: dict[str, QueueConfig[Any]] = dataclasses.field(
+        default_factory=dict
+    )
+    broker_queue_configs: dict[
+        Broker[Any], QueueConfig[Any]
+    ] = dataclasses.field(default_factory=dict)
 
     @classmethod
     def set(cls, store: Self):
@@ -40,7 +44,7 @@ class ConfigStore(ConfigFetcher):
         global default
         return default
 
-    def set_defaut(self):
+    def set_as_defaut(self):
         self.set(self)
 
     @property
