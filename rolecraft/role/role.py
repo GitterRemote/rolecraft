@@ -72,17 +72,17 @@ class Role[**P, R, D: SerializedData]:
         raw_queue: MessageQueue | None = None,
         **options,
     ) -> Message:
-        # TODO: add queue config keys and encoder
         if raw_queue:
             queue = self.queue_manager.get_or_bulid(raw_queue=raw_queue)
         else:
-            queue_name = queue_name or self.queue_name or "default"
+            # TODO: add queue config keys and encoder
             queue = self.queue_manager.get_or_bulid(
-                queue_name=queue_name, broker=broker
+                queue_name=queue_name or self.queue_name or "default",
+                broker=broker,
             )
 
         message = self._build_message(queue, *args, **kwds)
-        # TODO: add role-specific enqueue parameters
+        # TODO: add role-specific enqueue parameters, replace options with typeddict
         if not message.enqueue(**options):
             raise RuntimeError(
                 f"Dispatch message error: enqueue error for {message}"

@@ -8,7 +8,7 @@ from .queue import MessageQueue
 
 
 @dataclasses.dataclass(kw_only=True)
-class QueueManager[M]:
+class QueueManager:
     """It accepts user-defined queue related configurations, which are used during the queue building stage."""
 
     queue_names: list[str] | None = None
