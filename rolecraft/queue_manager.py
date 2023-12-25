@@ -54,6 +54,8 @@ class QueueManager[M]:
         if queue_name in self._queues:
             return self._queues[queue_name]
 
+        # TODO: add thread lock
+
         builder = self._get_queue_builder()
         if raw_queue:
             queues = builder.build(raw_queues=[raw_queue])
@@ -65,7 +67,9 @@ class QueueManager[M]:
             queues = builder.build(queue_names=[queue_name])
 
         assert len(queues) == 1
-        return queues[0]
+        queue = queues[0]
+        self._queues[queue_name] = queue
+        return queue
 
     def build_queues(self) -> list[MessageQueue]:
         """Always build brand new queues from the latest configuration."""
