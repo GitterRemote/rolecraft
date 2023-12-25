@@ -23,6 +23,10 @@ class ConfigFetcher(Protocol):
         ...
 
 
+class IncompleteConfigError(Exception):
+    pass
+
+
 @dataclasses.dataclass(kw_only=True)
 class ConfigStore(ConfigFetcher):
     queue_config: QueueConfig[Any] | IncompleteQueueConfig[Any]
@@ -51,7 +55,7 @@ class ConfigStore(ConfigFetcher):
     def default_queue_config(self) -> QueueConfig[Any]:
         if isinstance(self.queue_config, QueueConfig):
             return self.queue_config
-        raise RuntimeError("Default config is not configured")
+        raise IncompleteConfigError()
 
     def __call__[O](
         self,
@@ -88,7 +92,7 @@ class ConfigStore(ConfigFetcher):
 
                 if not isinstance(config, QueueConfig):
                     if not broker:
-                        raise RuntimeError("No default broker is set")
+                        raise IncompleteConfigError()
 
                     config = dataclasses.replace(
                         config, broker=broker
