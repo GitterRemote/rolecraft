@@ -9,6 +9,11 @@ def broker():
 
 
 @pytest.fixture()
+def another_broker():
+    return mock.MagicMock()
+
+
+@pytest.fixture()
 def encoder():
     return mock.MagicMock()
 
@@ -21,3 +26,8 @@ def queue_config(broker, encoder):
 @pytest.fixture()
 def incomplete_queue_config(encoder):
     return queue_config_mod.IncompleteQueueConfig(encoder=encoder)
+
+
+@pytest.fixture()
+def middlewares():
+    return [mock.MagicMock(), mock.MagicMock()]
