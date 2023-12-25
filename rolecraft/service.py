@@ -1,15 +1,10 @@
 import logging
 import signal
-from .queue import MessageQueue
-from .config import Config, ConfigFetcher, DefaultConfigFetcher
-from .broker import Broker
-from .role import RoleHanger
-from . import queue_builder as _queue_builder
-from . import worker_pool as _worker_pool
-from . import consumer as _consumer
-from . import worker as _worker
-from . import role as _role
 
+from .consumer import Consumer
+from .queue import MessageQueue
+from .worker import Worker
+from .worker_pool import ThreadWorkerPool, WorkerPool
 
 logger = logging.getLogger(__name__)
 
@@ -18,51 +13,21 @@ class Service:
     def __init__(
         self,
         *,
-        queue_names: list[str] | None = None,
-        queues: list[MessageQueue] | None = None,
-        config: Config | None = None,
-        queue_configs: dict[str, Config] | None = None,
-        broker_configs: dict[Broker, Config] | None = None,
-        config_fetcher: ConfigFetcher | None = None,
-        consumer_factory=_consumer.DefaultConsumerFactory(),
-        role_hanger: RoleHanger | None = None,
+        queues: list[MessageQueue],
+        consumer: Consumer,
+        worker: Worker,
+        worker_pool: WorkerPool,
     ) -> None:
-        # TODO: move into start method
-        self.config_fetcher = config_fetcher or DefaultConfigFetcher(
-            config, queue_configs, broker_configs
-        )
+        self.queues = queues
+        self.consumer = consumer
+        self.worker = worker
+        self.worker_pool = worker_pool
 
-        self.queues = _queue_builder.QueueBuilder(
-            config_fetcher=self.config_fetcher,
-            queue_names=queue_names,
-            queues=queues,
-        ).build()
-
-        self.worker_pool = _worker_pool.ThreadWorkerPool()
-        self.consumer = consumer_factory(queues=self.queues)
-        self.worker = _worker.Worker(
-            worker_pool=self.worker_pool,
-            consumer=self.consumer,
-            role_hanger=role_hanger or _role.default_role_hanger,
-        )
-
-    def start(self, *, thread_num: int):
-        """
-        1. start workerpool
-        2. find all queues
-            1. queue names
-                1. by default use "default"
-                2. queue name bound to the role
-                3. specify when starting the service
-            2. queue name -> broker mapping
-                1. by default use global broker
-                2. specify when starting the service
-            3. middlewares
-                1. configuration
-            4. encoder
-        3. start dispatcher
-        """
-        self.worker_pool.thread_num = thread_num
+    def start(self, *, thread_num: int | None = None):
+        if isinstance(self.worker_pool, ThreadWorkerPool):
+            self.worker_pool.thread_num = thread_num or 1
+        elif thread_num:
+            raise NotImplementedError("Unsupported worker pool")
 
         self._register_signal()
 

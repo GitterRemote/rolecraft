@@ -1,4 +1,4 @@
-from .config import Config
-from .config_fetcher import ConfigFetcher, DefaultConfigFetcher
+from .config_store import ConfigFetcher, ConfigStore
+from .queue_config import QueueConfig
 
-__all__ = ["Config", "ConfigFetcher", "DefaultConfigFetcher"]
+__all__ = ["ConfigFetcher", "ConfigStore", "QueueConfig"]
