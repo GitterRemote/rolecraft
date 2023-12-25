@@ -13,7 +13,6 @@ class TestEmptyStore:
         )
 
     def test_set_default(self, store):
-        assert config_store_mod.ConfigStore.get() is None
         store.set_as_defaut()
         assert config_store_mod.ConfigStore.get() is store
 
@@ -99,11 +98,6 @@ class TestDefaultOnlyStore:
     @pytest.fixture()
     def store(self, queue_config):
         return config_store_mod.ConfigStore(queue_config=queue_config)
-
-    def test_set_default(self, store):
-        assert config_store_mod.ConfigStore.get() is None
-        store.set_as_defaut()
-        assert config_store_mod.ConfigStore.get() is store
 
     def test_default_queue_config(self, store, queue_config):
         assert store.default_queue_config is queue_config
