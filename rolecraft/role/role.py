@@ -1,9 +1,9 @@
 from collections.abc import Callable
 
-from rolecraft import broker as _broker
 from rolecraft.broker import Broker
 from rolecraft.message import Message
 from rolecraft.queue import MessageQueue
+from rolecraft.queue_manager import QueueManager
 
 from .role_hanger import RoleHanger
 from .serializer import ParamsSerializerType, SerializedData
@@ -23,6 +23,7 @@ class Role[**P, R, D: SerializedData]:
         serializer: ParamsSerializerType[D],
         deserializer: ParamsSerializerType[SerializedData] | None = None,
         role_hanger: RoleHanger,
+        queue_manager: QueueManager,
         **options,
     ) -> None:
         self.fn = fn
@@ -32,6 +33,7 @@ class Role[**P, R, D: SerializedData]:
         self.serializer = serializer
         self.deserializer = deserializer
         self.role_hanger = role_hanger
+        self.queue_manager = queue_manager
 
         self.options = options
 
@@ -66,13 +68,19 @@ class Role[**P, R, D: SerializedData]:
         kwds,
         *,
         queue_name: str | None = None,
-        queue: MessageQueue | None = None,
         broker: Broker | None = None,
+        raw_queue: MessageQueue | None = None,
         **options,
     ) -> Message:
-        queue = self._get_queue(
-            queue_name=queue_name, queue=queue, broker=broker
-        )
+        # TODO: add queue config keys and encoder
+        if raw_queue:
+            queue = self.queue_manager.get_or_bulid(raw_queue=raw_queue)
+        else:
+            queue_name = queue_name or self.queue_name or "default"
+            queue = self.queue_manager.get_or_bulid(
+                queue_name=queue_name, broker=broker
+            )
+
         message = self._build_message(queue, *args, **kwds)
         # TODO: add role-specific enqueue parameters
         if not message.enqueue(**options):
@@ -86,19 +94,3 @@ class Role[**P, R, D: SerializedData]:
     ) -> Message:
         data = self.serializer.serialize(self.fn, args, kwds)
         return Message(role_name=self.name, role_data=data, queue=queue)
-
-    def _get_queue(
-        self,
-        queue_name: str | None = None,
-        queue: MessageQueue | None = None,
-        broker: Broker | None = None,
-    ) -> MessageQueue:
-        # TODO: how to configure & get middlewares for dispatching?
-        raise NotImplementedError
-
-    def _get_broker(self) -> Broker:
-        # TODO: discussion: could the role have a bounded broker?
-        broker = _broker.default_broker
-        if not broker:
-            raise RuntimeError("Broker is required to be set or bound")
-        return broker
