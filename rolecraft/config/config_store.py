@@ -68,7 +68,7 @@ class ConfigStore(ConfigFetcher):
         if broker:
             config = dataclasses.replace(config, broker=broker)
         if encoder:
-            config = dataclasses.replace(config, broker=broker)
+            config = dataclasses.replace(config, encoder=encoder)
 
         return config
 
@@ -85,9 +85,11 @@ class ConfigStore(ConfigFetcher):
 
             if not config:
                 config = self.queue_config
+
                 if not isinstance(config, QueueConfig):
                     if not broker:
                         raise RuntimeError("No default broker is set")
+
                     config = dataclasses.replace(
                         config, broker=broker
                     ).to_queue_config()

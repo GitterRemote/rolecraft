@@ -64,7 +64,7 @@ class InjectableConfig[Q: QueueConfig[Any] | IncompleteQueueConfig[Any]]:
             queue_config=config.queue_config,
             queue_configs=queue_configs,
             broker_queue_configs=broker_queue_configs,
-        ).set_defaut()
+        ).set_as_defaut()
 
 
 @dataclasses.dataclass

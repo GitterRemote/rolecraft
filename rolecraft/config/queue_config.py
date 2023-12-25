@@ -1,5 +1,5 @@
 import dataclasses
-from typing import TypedDict, TypeVar, NotRequired
+from typing import TypedDict, TypeVar
 
 from rolecraft.broker import Broker
 from rolecraft.encoder import Encoder
@@ -8,9 +8,9 @@ from rolecraft.middleware import Middleware, MiddlewareList
 M_co = TypeVar("M_co", covariant=True)
 
 
-class QueueConfigKeys(TypedDict):
-    middlewares: NotRequired[list[Middleware] | MiddlewareList | None]
-    consumer_wait_time_seconds: NotRequired[int | None]
+class QueueConfigKeys(TypedDict, total=False):
+    middlewares: list[Middleware] | MiddlewareList | None
+    consumer_wait_time_seconds: int | None
 
 
 @dataclasses.dataclass(kw_only=True, frozen=True)
@@ -32,4 +32,6 @@ class IncompleteQueueConfig[M_co](_QueueConfig):
 
     def to_queue_config(self) -> QueueConfig[M_co]:
         assert self.broker
-        return QueueConfig(**dataclasses.asdict(self))
+        return QueueConfig(
+            **{f.name: getattr(self, f.name) for f in dataclasses.fields(self)}
+        )
