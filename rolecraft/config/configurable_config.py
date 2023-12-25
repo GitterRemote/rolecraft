@@ -203,12 +203,12 @@ class ConfigurableConfig(
         encoder: Encoder[M],
         **kwds: Unpack[QueueConfigKeys],
     ) -> ConfigurableBrokerConfig[M]:
-        options = dataclasses.asdict(
-            dataclasses.replace(self.queue_config, **kwds)
+        config = typing.cast(
+            QueueConfig[M],
+            dataclasses.replace(
+                self.queue_config, broker=broker, encoder=encoder, **kwds
+            ),
         )
-        options.pop("broker")
-        options.pop("encoder")
-        config = QueueConfig(broker=broker, encoder=encoder, **options)
         broker_config = ConfigurableBrokerConfig(queue_config=config)
         self.broker_configs[broker] = broker_config
         return broker_config

@@ -1,3 +1,4 @@
+from typing import Any
 import abc
 import dataclasses
 import json
@@ -24,14 +25,19 @@ class HeaderBytesEncoder(Encoder[HeaderBytesRawMessage]):
     def encode(self, message: Message) -> HeaderBytesRawMessage:
         if isinstance(message.role_data, bytes):
             raise NotImplementedError
-        msg_dict = dataclasses.asdict(message)
-        msg_dict.pop("id")
-        msg_dict.pop("meta")
-        msg_dict.pop("queue")
+        msg_dict = self._to_dict(message)
 
         data = json.dumps(msg_dict).encode()
         headers = self._encode_meta(message.meta)
         return HeaderBytesRawMessage(id=message.id, data=data, headers=headers)
+
+    def _to_dict(self, message: Message) -> dict[str, Any]:
+        data = {}
+        for field in dataclasses.fields(message):
+            if field.name in ("id", "meta", "queue"):
+                continue
+            data[field.name] = getattr(message, field.name)
+        return data
 
     def _encode_meta(self, meta) -> dict[str, _META_VALUE_TYPE]:
         """excludes the None value from dict"""
