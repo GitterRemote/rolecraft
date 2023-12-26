@@ -1,7 +1,6 @@
 import dataclasses
 import inspect
 import json
-import warnings
 from collections.abc import Callable
 from typing import TypeGuard
 
