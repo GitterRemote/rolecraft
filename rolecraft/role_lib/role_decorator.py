@@ -1,13 +1,13 @@
 from collections.abc import Callable
 from typing import Unpack
 
-from rolecraft.queue_factory import QueueFactory
+from rolecraft import role_hanger as _role_hanger
 from rolecraft.config import ConfigStore
+from rolecraft.queue_factory import QueueFactory
+from rolecraft.role_hanger import RoleHanger
 
-from . import role_hanger as _role_hanger
 from . import serializer as _serializer
 from .role import Role, RoleDefaultOptions
-from .role_hanger import RoleHanger
 from .serializer import ParamsSerializerType, SerializedData
 
 
