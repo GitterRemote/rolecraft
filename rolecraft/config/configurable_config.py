@@ -56,7 +56,10 @@ class InjectableConfig[Q: QueueConfig[Any] | IncompleteQueueConfig[Any]]:
         return _config_store.DefaultConfigStore
 
     def inject(self):
-        """Inject into config store."""
+        """Inject into the global config store."""
+        self.create_config_store().set_as_defaut()
+
+    def create_config_store(self) -> ConfigStore:
         config = self
         queue_configs = dict(config.queue_configs)
         broker_queue_configs: dict[Broker[Any], QueueConfig[Any]] = {}
@@ -65,11 +68,11 @@ class InjectableConfig[Q: QueueConfig[Any] | IncompleteQueueConfig[Any]]:
             queue_configs.update(broker_config.queue_configs)
             broker_queue_configs[broker] = broker_config.queue_config
 
-        self.config_store_cls(
+        return self.config_store_cls(
             queue_config=config.queue_config,
             queue_configs=queue_configs,
             broker_queue_configs=broker_queue_configs,
-        ).set_as_defaut()
+        )
 
 
 @dataclasses.dataclass
@@ -225,6 +228,7 @@ class ConfigurableConfig(
         encoder: Encoder[M],
         **kwds: Unpack[QueueConfigKeys],
     ) -> typing.Self:
+        # FIXME: override broker config if it exists
         config = dataclasses.replace(
             self.queue_config, broker=broker, encoder=encoder, **kwds
         ).to_queue_config()

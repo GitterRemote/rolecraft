@@ -3,12 +3,11 @@ import dataclasses
 from typing import Any, Protocol, Self, Unpack
 
 from rolecraft.broker import Broker
-from rolecraft.encoder import Encoder
 
 from .queue_config import (
     IncompleteQueueConfig,
     QueueConfig,
-    QueueConfigKeys,
+    AllQueueConfigKeys,
 )
 
 
@@ -16,10 +15,7 @@ class ConfigFetcher(Protocol):
     def __call__[M](
         self,
         queue_name: str | None = None,
-        *,
-        broker: Broker[M] | None = None,
-        encoder: Encoder[M] | None = None,
-        **kwds: Unpack[QueueConfigKeys],
+        **kwds: Unpack[AllQueueConfigKeys[M]],
     ) -> QueueConfig[M]:
         ...
 
@@ -85,23 +81,19 @@ class DefaultConfigStore(ConfigStore, ConfigFetcher):
     def __call__[O](
         self,
         queue_name: str | None = None,
-        *,
-        broker: Broker[O] | None = None,
-        encoder: Encoder[O] | None = None,
-        **kwds: Unpack[QueueConfigKeys],
+        **kwds: Unpack[AllQueueConfigKeys[O]],
     ) -> QueueConfig[O] | QueueConfig[Any]:
-        config = self._get_queue_config(queue_name, broker)
+        # TODO: raise ValueError if broker/encoder/middlewares are set to None
+        config = self._get_default_queue_config(
+            queue_name, broker=kwds.get("broker")
+        )
 
         if kwds:
             config = dataclasses.replace(config, **kwds)
-        if broker:
-            config = dataclasses.replace(config, broker=broker)
-        if encoder:
-            config = dataclasses.replace(config, encoder=encoder)
 
         return config
 
-    def _get_queue_config(
+    def _get_default_queue_config(
         self,
         queue_name: str | None,
         broker: Broker[Any] | None,

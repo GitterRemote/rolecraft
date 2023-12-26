@@ -1,7 +1,7 @@
-import typing
+from typing import Unpack
 
 from .broker import Broker
-from .config import ConfigFetcher, QueueConfig
+from .config import ConfigFetcher, QueueConfig, AllQueueConfigKeys
 from .queue import MessageQueue
 
 
@@ -13,6 +13,10 @@ class QueueBuilder:
         config_fetcher: ConfigFetcher,
     ):
         self.config_fetcher = config_fetcher
+
+    def build_one(self, queue_name: str, **kwds: Unpack[AllQueueConfigKeys]):
+        raw_queue = self._build_raw_queue(queue_name, **kwds)
+        return self.wrap(raw_queue)
 
     def build(
         self,
@@ -34,25 +38,35 @@ class QueueBuilder:
 
         if queue_names_per_broker:
             for broker, queue_names in queue_names_per_broker.items():
-                all_queues.extend(self._build_raw_queues(queue_names, broker))
+                all_queues.extend(
+                    self._build_raw_queues(queue_names, broker=broker)
+                )
 
         all_queues.extend(raw_queues)
 
         if not all_queues:
             all_queues.append(self._get_default_queue())
 
-        return [self._wrap(q) for q in all_queues]
+        return [self.wrap(q) for q in all_queues]
 
-    def _build_raw_queues(self, queue_names, broker: Broker | None = None):
+    def _build_raw_queues(
+        self, queue_names, **kwds: Unpack[AllQueueConfigKeys]
+    ):
         for queue_name in queue_names:
-            config = self.config_fetcher(queue_name, broker=broker)
-            yield self._new_queue(queue_name, config)
+            yield self._build_raw_queue(queue_name, **kwds)
 
-    def _wrap(self, queue: MessageQueue) -> MessageQueue:
-        config = self.config_fetcher(queue.name, broker=queue.broker)
-        assert config.middlewares
+    def _build_raw_queue(
+        self, queue_name: str, **kwds: Unpack[AllQueueConfigKeys]
+    ):
+        config = self.config_fetcher(queue_name, **kwds)
+        return self._new_queue(queue_name, config)
+
+    def wrap(self, raw_queue: MessageQueue) -> MessageQueue:
+        config = self.config_fetcher(raw_queue.name, broker=raw_queue.broker)
+        assert config.middlewares is not None
+        queue = raw_queue
         for middleware in config.middlewares:
-            queue = typing.cast(MessageQueue, middleware(queue))
+            queue = middleware(queue)
             assert isinstance(queue, MessageQueue)
         return queue
 
