@@ -13,7 +13,7 @@ class DuplicatedRoleError(Exception):
         super().__init__(*args)
 
 
-class RoleHanger(collections.UserDict[str, Role]):
+class RoleHanger(collections.UserDict[str, "Role"]):
     def put(self, role: Role):
         if role.name in self:
             raise DuplicatedRoleError(role=role)
