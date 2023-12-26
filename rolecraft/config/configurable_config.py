@@ -190,7 +190,9 @@ class ConfigurableDefaultConfig[M](InjectableConfig[QueueConfig[M]]):
 class ConfigurableConfig(
     InjectableConfig[IncompleteQueueConfig[HeaderBytesRawMessage]]
 ):
-    queue_config = IncompleteQueueConfig(
+    queue_config: IncompleteQueueConfig[
+        HeaderBytesRawMessage
+    ] = IncompleteQueueConfig(
         middlewares=_middleware.MiddlewareList([_middleware.Retryable()]),
         encoder=_encoder.HeaderBytesEncoder(),
         consumer_wait_time_seconds=10 * 60,
