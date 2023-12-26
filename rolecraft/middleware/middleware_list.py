@@ -1,6 +1,8 @@
-import collections.abc
 import dataclasses
 import functools
+import typing
+from collections.abc import Iterable, MutableSequence
+
 from .middleware import Middleware
 from .retryable import Retryable
 
@@ -8,7 +10,7 @@ M = Middleware
 
 
 @dataclasses.dataclass(init=False, eq=True, order=False, repr=False)
-class MiddlewareList(collections.abc.MutableSequence[M]):
+class MiddlewareList(MutableSequence[M]):
     _middlewares: list[M]
     retryable: Retryable | None = None
 
@@ -86,8 +88,25 @@ class MiddlewareList(collections.abc.MutableSequence[M]):
         middleware = self._middlewares[index]
         self._remove_middleware(middleware)
 
+    @typing.overload
     def __getitem__(self, index: int) -> M:
+        ...
+
+    @typing.overload
+    def __getitem__(self, index: slice) -> typing.Self:
+        ...
+
+    def __getitem__(self, index: int | slice) -> M | typing.Self:
+        if isinstance(index, slice):
+            return self.__class__(self._middlewares[index])
         return self._middlewares[index]
 
     def __len__(self) -> int:
         return len(self._middlewares)
+
+    # extra methods
+    def __add__(self, values: Iterable[M]):
+        return self.__class__(self._middlewares + list(values))
+
+    def __radd__(self, values: Iterable[M]):
+        return self.__class__(list(values) + self._middlewares)
