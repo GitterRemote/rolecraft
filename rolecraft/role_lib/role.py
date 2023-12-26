@@ -6,8 +6,8 @@ from rolecraft.config import AllQueueConfigKeys
 from rolecraft.message import Message
 from rolecraft.queue import EnqueueOptions, MessageQueue
 from rolecraft.queue_factory import QueueFactory
+from rolecraft.role_hanger import RoleHanger
 
-from .role_hanger import RoleHanger
 from .serializer import ParamsSerializerType, SerializedData
 
 

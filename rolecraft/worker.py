@@ -1,8 +1,9 @@
 import logging
-from .message import Message
-from .worker_pool import WorkerPool, ThreadWorkerPool
+
 from .consumer import Consumer
-from .role_lib import RoleHanger
+from .message import Message
+from .role_hanger import RoleHanger
+from .worker_pool import ThreadWorkerPool, WorkerPool
 
 logger = logging.getLogger(__name__)
 
