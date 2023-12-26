@@ -1,12 +1,18 @@
+import typing
 from collections.abc import Callable
+from typing import TypedDict, Unpack
 
-from rolecraft.broker import Broker
+from rolecraft.config import AllQueueConfigKeys
 from rolecraft.message import Message
 from rolecraft.queue import MessageQueue
-from rolecraft.queue_manager import QueueManager
+from rolecraft.queue_factory import QueueFactory
 
 from .role_hanger import RoleHanger
 from .serializer import ParamsSerializerType, SerializedData
+
+
+class DiaptchMessageOptions(AllQueueConfigKeys, total=False):
+    one_param_placeholder: str
 
 
 class Role[**P, R, D: SerializedData]:
@@ -23,7 +29,7 @@ class Role[**P, R, D: SerializedData]:
         serializer: ParamsSerializerType[D],
         deserializer: ParamsSerializerType[SerializedData] | None = None,
         role_hanger: RoleHanger,
-        queue_manager: QueueManager,
+        queue_factory: QueueFactory,
         **options,
     ) -> None:
         self.fn = fn
@@ -33,7 +39,7 @@ class Role[**P, R, D: SerializedData]:
         self.serializer = serializer
         self.deserializer = deserializer
         self.role_hanger = role_hanger
-        self.queue_manager = queue_manager
+        self.queue_factory = queue_factory
 
         self.options = options
 
@@ -68,17 +74,16 @@ class Role[**P, R, D: SerializedData]:
         kwds,
         *,
         queue_name: str | None = None,
-        broker: Broker | None = None,
         raw_queue: MessageQueue | None = None,
-        **options,
+        **options: Unpack[DiaptchMessageOptions],
     ) -> Message:
         if raw_queue:
-            queue = self.queue_manager.get_or_bulid(raw_queue=raw_queue)
+            queue = self.queue_factory.get_or_bulid(raw_queue=raw_queue)
         else:
-            # TODO: add queue config keys and encoder
-            queue = self.queue_manager.get_or_bulid(
+            queue_configs = self._subset_dict(options, AllQueueConfigKeys)
+            queue = self.queue_factory.get_or_bulid(
                 queue_name=queue_name or self.queue_name or "default",
-                broker=broker,
+                **queue_configs,
             )
 
         message = self._build_message(queue, *args, **kwds)
@@ -88,6 +93,16 @@ class Role[**P, R, D: SerializedData]:
                 f"Dispatch message error: enqueue error for {message}"
             )
         return message
+
+    def _subset_dict[T: TypedDict](self, parent: T, child_type: type[T]) -> T:
+        return typing.cast(
+            T,
+            {
+                key_name: parent.pop(key_name)  # type: ignore
+                for key_name in child_type.__annotations__.keys()
+                if key_name in parent
+            },
+        )
 
     def _build_message(
         self, queue: MessageQueue, *args: P.args, **kwds: P.kwargs

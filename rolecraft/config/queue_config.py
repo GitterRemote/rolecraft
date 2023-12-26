@@ -9,13 +9,20 @@ M_co = TypeVar("M_co", covariant=True)
 
 
 class QueueConfigKeys(TypedDict, total=False):
-    middlewares: list[Middleware] | MiddlewareList | None
+    middlewares: list[Middleware] | MiddlewareList
     consumer_wait_time_seconds: int | None
+
+
+class AllQueueConfigKeys[M](QueueConfigKeys, total=False):
+    encoder: Encoder[M]
+    broker: Broker[M]
 
 
 @dataclasses.dataclass(kw_only=True, frozen=True)
 class _QueueConfig:
-    middlewares: list[Middleware] | MiddlewareList | None = None
+    middlewares: list[Middleware] | MiddlewareList = dataclasses.field(
+        default_factory=MiddlewareList
+    )
     consumer_wait_time_seconds: int | None = None
 
 

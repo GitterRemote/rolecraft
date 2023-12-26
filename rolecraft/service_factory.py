@@ -1,12 +1,14 @@
 import logging
 from collections.abc import Callable
+from typing import Unpack
 
 from . import consumer as _consumer
 from . import role as _role
 from . import worker as _worker
 from . import worker_pool as _worker_pool
+from .config import ConfigStore
 from .consumer import ConsumerFactory
-from .queue_manager import QueueManager
+from .queue_factory import QueueAndNameKeys, QueueFactory
 from .role import RoleHanger
 from .service import Service
 from .worker_pool import WorkerPool
@@ -18,12 +20,12 @@ class ServiceFactory:
     def __init__(
         self,
         *,
-        queue_manager: QueueManager,
+        queue_factory: QueueFactory | None = None,
         consumer_factory: ConsumerFactory | None = None,
         worker_pool_factory: Callable[[], WorkerPool] | None = None,
         role_hanger: RoleHanger | None = None,
     ) -> None:
-        self.queue_manager = queue_manager
+        self.queue_factory = queue_factory or QueueFactory()
         self.consumer_factory = (
             consumer_factory or _consumer.DefaultConsumerFactory()
         )
@@ -32,8 +34,17 @@ class ServiceFactory:
         )
         self.role_hanger = role_hanger or _role.default_role_hanger
 
-    def create(self) -> Service:
-        queues = self.queue_manager.build_queues()
+    def create(
+        self,
+        *,
+        config_store: ConfigStore | None = None,
+        **kwds: Unpack[QueueAndNameKeys],
+    ) -> Service:
+        queues = self.queue_factory.build_queues(
+            auto_discorvery=True,
+            config_fetcher=config_store.fetcher if config_store else None,
+            **kwds,
+        )
         consumer = self.consumer_factory(queues=queues)
         worker_pool = self.worker_pool_factory()
         worker = _worker.Worker(
