@@ -20,6 +20,10 @@ def broker2():
 def encoder():
     return mock.MagicMock()
 
+@pytest.fixture()
+def encoder2():
+    return mock.MagicMock()
+
 
 @pytest.fixture()
 def queue_config(broker, encoder):

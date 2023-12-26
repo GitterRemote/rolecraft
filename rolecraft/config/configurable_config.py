@@ -255,12 +255,17 @@ class ConfigurableConfig(
     def add_queue_config[M](
         self,
         queue_name: str,
-        broker: Broker[M],
-        encoder: Encoder[M],
+        broker: Broker[M] | Broker[HeaderBytesRawMessage],
+        encoder: Encoder[M] | None = None,
         **kwds: Unpack[QueueConfigKeys],
     ) -> typing.Self:
-        config = dataclasses.replace(
-            self.queue_config, broker=broker, encoder=encoder, **kwds
-        ).to_queue_config()
+        if encoder:
+            config = dataclasses.replace(
+                self.queue_config, broker=broker, encoder=encoder, **kwds
+            ).to_queue_config()
+        else:
+            config = dataclasses.replace(
+                self.queue_config, broker=broker, **kwds
+            ).to_queue_config()
         self.queue_configs[queue_name] = config
         return self
