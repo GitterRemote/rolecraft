@@ -4,15 +4,19 @@ from typing import TypedDict, Unpack
 
 from rolecraft.config import AllQueueConfigKeys
 from rolecraft.message import Message
-from rolecraft.queue import MessageQueue
+from rolecraft.queue import EnqueueOptions, MessageQueue
 from rolecraft.queue_factory import QueueFactory
 
 from .role_hanger import RoleHanger
 from .serializer import ParamsSerializerType, SerializedData
 
 
-class DiaptchMessageOptions(AllQueueConfigKeys, total=False):
-    one_param_placeholder: str
+class RoleDefaultOptions(AllQueueConfigKeys, EnqueueOptions, total=False):
+    ...
+
+
+class DiaptchMessageOptions(AllQueueConfigKeys, EnqueueOptions, total=False):
+    ...
 
 
 class Role[**P, R, D: SerializedData]:
@@ -25,22 +29,22 @@ class Role[**P, R, D: SerializedData]:
         fn: Callable[P, R],
         name: str | None = None,
         *,
-        queue_name: str,
         serializer: ParamsSerializerType[D],
         deserializer: ParamsSerializerType[SerializedData] | None = None,
         role_hanger: RoleHanger,
         queue_factory: QueueFactory,
-        **options,
+        queue_name: str | None = None,
+        **options: Unpack[RoleDefaultOptions],
     ) -> None:
         self.fn = fn
         self._name = name
-        self.queue_name = queue_name
 
         self.serializer = serializer
         self.deserializer = deserializer
         self.role_hanger = role_hanger
         self.queue_factory = queue_factory
 
+        self.queue_name = queue_name
         self.options = options
 
     @property
@@ -77,6 +81,10 @@ class Role[**P, R, D: SerializedData]:
         raw_queue: MessageQueue | None = None,
         **options: Unpack[DiaptchMessageOptions],
     ) -> Message:
+        defaults = self.options.copy()
+        defaults.update(options)
+        options = defaults
+
         if raw_queue:
             queue = self.queue_factory.get_or_bulid(raw_queue=raw_queue)
         else:
@@ -87,7 +95,6 @@ class Role[**P, R, D: SerializedData]:
             )
 
         message = self._build_message(queue, *args, **kwds)
-        # TODO: add role-specific enqueue parameters, replace options with typeddict
         if not message.enqueue(**options):
             raise RuntimeError(
                 f"Dispatch message error: enqueue error for {message}"

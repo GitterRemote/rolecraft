@@ -4,9 +4,11 @@ import typing
 from collections.abc import Callable
 from typing import Any, Concatenate
 
-from rolecraft.broker import Broker, ReceiveFuture
+from rolecraft.broker import Broker, EnqueueOptions, ReceiveFuture
 from rolecraft.encoder import Encoder
 from rolecraft.message import Message
+
+__all__ = ["MessageQueue", "EnqueueOptions"]
 
 
 # refer to:
