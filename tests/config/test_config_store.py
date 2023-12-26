@@ -1,20 +1,21 @@
 import dataclasses
 import pytest
+from unittest import mock
 from rolecraft.config import config_store as config_store_mod
 
 IncompleteConfigError = config_store_mod.IncompleteConfigError
+
+DefaultConfigStore = config_store_mod.DefaultConfigStore
 
 
 class TestEmptyStore:
     @pytest.fixture()
     def store(self, incomplete_queue_config):
-        return config_store_mod.DefaultConfigStore(
-            queue_config=incomplete_queue_config
-        )
+        return DefaultConfigStore(queue_config=incomplete_queue_config)
 
     def test_set_default(self, store):
         store.set_as_defaut()
-        assert config_store_mod.DefaultConfigStore.get() is store
+        assert DefaultConfigStore.get() is store
 
     def test_fetch_default_config(self, store):
         with pytest.raises(IncompleteConfigError):
@@ -90,10 +91,50 @@ class TestEmptyStore:
         )
 
 
-class TestDefaultOnlyStore:
+class TestQueueConfigsOnlyStore:
     @pytest.fixture()
-    def store(self, queue_config):
-        return config_store_mod.DefaultConfigStore(queue_config=queue_config)
+    def store(self, queue_configs_only_store):
+        return queue_configs_only_store
+
+    def test_fetch_queue_config_for_queue2(self, store, queue_config2):
+        assert store("queue2") is queue_config2
+
+
+class TestBrokerQueueConfigOnlyStore:
+    @pytest.fixture()
+    def store(self, broker_queue_configs_only_store):
+        return broker_queue_configs_only_store
+
+    def test_queue_to_broker(
+        self, store, broker, broker2, queue_config, queue_config4
+    ):
+        def queue_to_broker(queue_name: str):
+            if queue_name == "a_queue_with_broker2":
+                return broker2
+            return broker
+
+        store.queue_to_broker = queue_to_broker
+        assert store("any_queue_name") == queue_config
+        assert store("a_queue_with_broker2") == queue_config4
+
+    def test_fetch_config_with_broker(
+        self, store, broker2, queue_config, queue_config4
+    ):
+        assert store("any_queue_name") == queue_config
+        assert store("any_queue_name", broker=broker2) == queue_config4
+
+
+class TestFetchQueueConfigWithParameters:
+    @pytest.fixture(
+        params=[
+            "default_only_store",
+            "queue_configs_only_store",
+            "broker_queue_configs_only_store",
+            "hybrid_queue_configs__store",
+        ]
+    )
+    def store(self, request) -> DefaultConfigStore:
+        return request.getfixturevalue(request.param)
 
     def test_fetch_default_config(self, store, queue_config):
         assert store() is queue_config
@@ -108,26 +149,20 @@ class TestDefaultOnlyStore:
 
         assert queue_config == config
 
-    def test_fetch_queue_config_of_the_another_broker(
-        self, store, another_broker
-    ):
-        config = store(broker=another_broker)
+    def test_fetch_queue_config_of_the_another_broker(self, store, broker2):
+        config = store(broker=broker2)
 
-        assert another_broker == config.broker
+        assert broker2 == config.broker
         assert (
-            dataclasses.replace(store.queue_config, broker=another_broker)
-            == config
+            dataclasses.replace(store.queue_config, broker=broker2) == config
         )
 
-    def test_fetch_queue_config_with_queue_and_broker(
-        self, store, another_broker
-    ):
-        config = store("any_queue_name", broker=another_broker)
+    def test_fetch_queue_config_with_queue_and_broker(self, store, broker2):
+        config = store("any_queue_name", broker=broker2)
 
-        assert config.broker is another_broker
+        assert config.broker is broker2
         assert (
-            dataclasses.replace(store.queue_config, broker=another_broker)
-            == config
+            dataclasses.replace(store.queue_config, broker=broker2) == config
         )
 
     def test_fetch_queue_config_with_encoder(self, store, encoder):
@@ -179,10 +214,15 @@ class TestDefaultOnlyStore:
             == config
         )
 
+    @pytest.fixture
+    def unused_broker(self):
+        return mock.MagicMock()
 
-class TestQueueConfigOnlyStore:
-    pass
+    def test_queue_to_unconfigured_broker(
+        self, store, unused_broker, queue_config
+    ):
+        def queue_to_broker(queue_name: str):
+            return unused_broker
 
-
-class TestBrokerQueueConfigOnlyStore:
-    pass
+        store.queue_to_broker = queue_to_broker
+        assert store("any_queue_name") == queue_config
