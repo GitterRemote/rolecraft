@@ -1,8 +1,8 @@
 from typing import Unpack
 
-from .broker import Broker
-from .config import ConfigFetcher, QueueConfig, AllQueueConfigKeys
-from .queue import MessageQueue
+from rolecraft.broker import Broker
+from rolecraft.config import AllQueueConfigKeys, ConfigFetcher, QueueConfig
+from rolecraft.queue import MessageQueue
 
 
 class QueueBuilder:

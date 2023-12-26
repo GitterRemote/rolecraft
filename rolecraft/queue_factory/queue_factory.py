@@ -1,11 +1,12 @@
 import typing
 from typing import TypedDict, Unpack
 
-from . import config as _config
+from rolecraft import config as _config
+from rolecraft.broker import Broker
+from rolecraft.config import AllQueueConfigKeys, ConfigFetcher, ConfigStore
+from rolecraft.queue import MessageQueue
+
 from . import queue_builder as _queue_builder
-from .broker import Broker
-from .config import AllQueueConfigKeys, ConfigFetcher, ConfigStore
-from .queue import MessageQueue
 
 
 class QueueAndNameKeys(TypedDict, total=False):
