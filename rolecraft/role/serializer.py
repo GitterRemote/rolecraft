@@ -34,13 +34,9 @@ class StrParamsSerializer(ParamsSerializer[str, tuple, dict]):
         return value
 
     def _restore(self, param: inspect.Parameter, value):
-        if isinstance(param.annotation, str):
-            warnings.warn("seems annotation doesn't work in runtime")
-            return value
         if dataclasses.is_dataclass(param.annotation):
             return param.annotation(**value)
-        else:
-            return value
+        return value
 
     def _restore_args(
         self, sig: inspect.Signature, args: tuple | list
@@ -51,12 +47,15 @@ class StrParamsSerializer(ParamsSerializer[str, tuple, dict]):
         )
 
     def _restore_kwds(self, sig: inspect.Signature, kwds: dict) -> dict:
-        # TODO: implement _restore_kwds
-        raise NotImplementedError
+        return {
+            k: self._restore(sig.parameters[k], v)
+            for k, v in kwds.items()
+            if k in sig.parameters
+        }
 
     def deserialize(self, fn: Callable, data: str) -> tuple[tuple, dict]:
         data_dict = json.loads(data)
-        sig = inspect.signature(fn)
+        sig = inspect.signature(fn, eval_str=True)
         args = self._restore_args(sig, data_dict.get("args", ()))
         kwds = self._restore_kwds(sig, data_dict.get("kwds", {}))
         return args, kwds
