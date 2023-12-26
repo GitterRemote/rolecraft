@@ -6,7 +6,6 @@ from rolecraft.config import AllQueueConfigKeys
 from rolecraft.message import Message
 from rolecraft.queue import EnqueueOptions, MessageQueue
 from rolecraft.queue_factory import QueueFactory
-from rolecraft.role_hanger import RoleHanger
 
 from .serializer import ParamsSerializerType, SerializedData
 
@@ -31,7 +30,6 @@ class Role[**P, R, D: SerializedData]:
         *,
         serializer: ParamsSerializerType[D],
         deserializer: ParamsSerializerType[SerializedData] | None = None,
-        role_hanger: RoleHanger,
         queue_factory: QueueFactory,
         queue_name: str | None = None,
         **options: Unpack[RoleDefaultOptions],
@@ -41,7 +39,6 @@ class Role[**P, R, D: SerializedData]:
 
         self.serializer = serializer
         self.deserializer = deserializer
-        self.role_hanger = role_hanger
         self.queue_factory = queue_factory
 
         self.queue_name = queue_name

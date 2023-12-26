@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import collections
 import typing
+from typing import Any
 
 if typing.TYPE_CHECKING:
     from .role_lib import Role
@@ -14,7 +15,7 @@ class DuplicatedRoleError(Exception):
 
 
 class RoleHanger(collections.UserDict[str, "Role"]):
-    def put(self, role: Role):
+    def put(self, role: Role[Any, Any, Any]):
         if role.name in self:
             raise DuplicatedRoleError(role=role)
         self[role.name] = role
