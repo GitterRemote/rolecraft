@@ -8,6 +8,7 @@ from rolecraft.broker import Broker, HeaderBytesRawMessage
 from rolecraft.encoder import Encoder
 
 from . import config_store as _config_store
+from .config_store import ConfigStore
 from .queue_config import (
     IncompleteQueueConfig,
     QueueConfig,
@@ -50,6 +51,10 @@ class InjectableConfig[Q: QueueConfig[Any] | IncompleteQueueConfig[Any]]:
     ] = dataclasses.field(default_factory=dict)
     queue_config: Q
 
+    @property
+    def config_store_cls(self) -> type[ConfigStore]:
+        return _config_store.DefaultConfigStore
+
     def inject(self):
         """Inject into config store."""
         config = self
@@ -60,7 +65,7 @@ class InjectableConfig[Q: QueueConfig[Any] | IncompleteQueueConfig[Any]]:
             queue_configs.update(broker_config.queue_configs)
             broker_queue_configs[broker] = broker_config.queue_config
 
-        _config_store.ConfigStore(
+        self.config_store_cls(
             queue_config=config.queue_config,
             queue_configs=queue_configs,
             broker_queue_configs=broker_queue_configs,

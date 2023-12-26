@@ -1,3 +1,4 @@
+import abc
 import dataclasses
 from typing import Any, Protocol, Self, Unpack
 
@@ -27,15 +28,41 @@ class IncompleteConfigError(Exception):
     pass
 
 
+class ConfigStore(abc.ABC):
+    """It stores all default QueueConfig for the initialization of the MessageQueue object. Besides, it stores queue-specific or broker-specific QueueConfig."""
+
+    QueueConfigType = QueueConfig[Any] | IncompleteQueueConfig[Any]
+    QueueConfigsType = dict[str, QueueConfig[Any]]
+    BrokerQueueConfigsType = dict[Broker[Any], QueueConfig[Any]]
+
+    @abc.abstractmethod
+    def __init__(
+        self,
+        queue_config: QueueConfigType | None = None,
+        queue_configs: dict[str, QueueConfig[Any]] | None = None,
+        broker_queue_configs: BrokerQueueConfigsType | None = None,
+    ) -> None:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def set_as_defaut(self) -> None:
+        raise NotImplementedError
+
+    @property
+    @abc.abstractmethod
+    def fetcher(self) -> ConfigFetcher:
+        raise NotImplementedError
+
+
 @dataclasses.dataclass(kw_only=True)
-class ConfigStore(ConfigFetcher):
-    queue_config: QueueConfig[Any] | IncompleteQueueConfig[Any]
-    queue_configs: dict[str, QueueConfig[Any]] = dataclasses.field(
+class DefaultConfigStore(ConfigStore, ConfigFetcher):
+    queue_config: ConfigStore.QueueConfigType
+    queue_configs: ConfigStore.QueueConfigsType = dataclasses.field(
         default_factory=dict
     )
-    broker_queue_configs: dict[
-        Broker[Any], QueueConfig[Any]
-    ] = dataclasses.field(default_factory=dict)
+    broker_queue_configs: ConfigStore.BrokerQueueConfigsType = (
+        dataclasses.field(default_factory=dict)
+    )
 
     @classmethod
     def set(cls, store: Self):
@@ -52,10 +79,8 @@ class ConfigStore(ConfigFetcher):
         self.set(self)
 
     @property
-    def default_queue_config(self) -> QueueConfig[Any]:
-        if isinstance(self.queue_config, QueueConfig):
-            return self.queue_config
-        raise IncompleteConfigError()
+    def fetcher(self):
+        return self
 
     def __call__[O](
         self,

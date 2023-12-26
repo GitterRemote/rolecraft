@@ -2,6 +2,7 @@ import dataclasses
 import typing
 
 from . import queue_builder as _queue_builder
+from . import config as _config
 from .broker import Broker
 from .config import ConfigStore
 from .queue import MessageQueue
@@ -82,10 +83,10 @@ class QueueManager:
 
     def _get_queue_builder(self):
         return _queue_builder.QueueBuilder(
-            config_fetcher=self._get_config_store()
+            config_fetcher=self._get_config_store().fetcher
         )
 
     def _get_config_store(self) -> ConfigStore:
-        store = self.config_store or ConfigStore.get()
+        store = self.config_store or _config.DefaultConfigStore.get()
         assert store
         return store
