@@ -29,6 +29,7 @@ class ConfigurableBrokerConfig[M_co]:
     def add_queue_config(
         self,
         queue_name: str,
+        *,
         encoder: Encoder[M_co] | None = None,
         **kwds: Unpack[QueueConfigKeys],
     ) -> typing.Self:
@@ -107,6 +108,7 @@ class ConfigurableDefaultConfig[M](InjectableConfig[QueueConfig[M]]):
     def add_queue_config(
         self,
         queue_name: str,
+        *,
         broker: Broker[M] | None = None,
         encoder: Encoder[M] | None = None,
         **kwds: Unpack[QueueConfigKeys],
@@ -117,6 +119,7 @@ class ConfigurableDefaultConfig[M](InjectableConfig[QueueConfig[M]]):
     def add_queue_config[O](
         self,
         queue_name: str,
+        *,
         broker: Broker[O],
         encoder: Encoder[O],
         **kwds: Unpack[QueueConfigKeys],
@@ -126,6 +129,7 @@ class ConfigurableDefaultConfig[M](InjectableConfig[QueueConfig[M]]):
     def add_queue_config(
         self,
         queue_name: str,
+        *,
         broker: Broker[Any] | None = None,
         encoder: Encoder[Any] | None = None,
         **kwds: Unpack[QueueConfigKeys],
@@ -194,6 +198,7 @@ class ConfigurableConfig(
 
     def update_default[M](
         self,
+        *,
         broker: Broker[M],
         encoder: Encoder[M] | None = None,
         **kwds: Unpack[QueueConfigKeys],
@@ -252,7 +257,6 @@ class ConfigurableConfig(
         encoder: Encoder[M],
         **kwds: Unpack[QueueConfigKeys],
     ) -> typing.Self:
-        # FIXME: override broker config if it exists
         config = dataclasses.replace(
             self.queue_config, broker=broker, encoder=encoder, **kwds
         ).to_queue_config()
