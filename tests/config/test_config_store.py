@@ -8,17 +8,13 @@ IncompleteConfigError = config_store_mod.IncompleteConfigError
 class TestEmptyStore:
     @pytest.fixture()
     def store(self, incomplete_queue_config):
-        return config_store_mod.ConfigStore(
+        return config_store_mod.DefaultConfigStore(
             queue_config=incomplete_queue_config
         )
 
     def test_set_default(self, store):
         store.set_as_defaut()
-        assert config_store_mod.ConfigStore.get() is store
-
-    def test_default_queue_config(self, store):
-        with pytest.raises(IncompleteConfigError):
-            store.default_queue_config
+        assert config_store_mod.DefaultConfigStore.get() is store
 
     def test_fetch_default_config(self, store):
         with pytest.raises(IncompleteConfigError):
@@ -97,10 +93,7 @@ class TestEmptyStore:
 class TestDefaultOnlyStore:
     @pytest.fixture()
     def store(self, queue_config):
-        return config_store_mod.ConfigStore(queue_config=queue_config)
-
-    def test_default_queue_config(self, store, queue_config):
-        assert store.default_queue_config is queue_config
+        return config_store_mod.DefaultConfigStore(queue_config=queue_config)
 
     def test_fetch_default_config(self, store, queue_config):
         assert store() is queue_config
