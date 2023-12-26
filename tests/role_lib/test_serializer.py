@@ -1,14 +1,5 @@
 import dataclasses
 
-import pytest
-
-from rolecraft.role_lib import serializer as serializer_mod
-
-
-@pytest.fixture
-def str_serializer():
-    return serializer_mod.str_serializer
-
 
 def test_serialize(str_serializer):
     def fn(a: int, b: str, *, c: float = 1.0):
