@@ -18,13 +18,14 @@ class RoleDecorator[**P, R, D: SerializedData]:
         serializer: ParamsSerializerType[D] | None = None,
         deserializer: ParamsSerializerType[SerializedData] | None = None,
         queue_factory: QueueFactory | None = None,
-        role_hanger: RoleHanger | None = None,
         config_store: ConfigStore | None = None,
+        role_hanger: RoleHanger | None = None,
         queue_name: str | None = None,
         **options: Unpack[RoleDefaultOptions],
     ) -> None:
         self.serializer = serializer
         self.deserializer = deserializer or _serializer.default_serializer
+
         self.queue_factory = queue_factory or QueueFactory(
             config_fetcher=config_store.fetcher if config_store else None
         )
@@ -40,18 +41,10 @@ class RoleDecorator[**P, R, D: SerializedData]:
         *,
         serializer: ParamsSerializerType[D] | None = None,
         deserializer: ParamsSerializerType[SerializedData] | None = None,
-        queue_factory: QueueFactory | None = None,
-        role_hanger: RoleHanger | None = None,
-        config_store: ConfigStore | None = None,
         queue_name: str | None = None,
         **options: Unpack[RoleDefaultOptions],
     ) -> Role[P, R, D] | Role[P, R, str]:
         serializer = serializer or self.serializer
-        queue_factory = queue_factory or (
-            QueueFactory(config_fetcher=config_store.fetcher)
-            if config_store
-            else self.queue_factory
-        )
 
         queue_name = queue_name if queue_name is not None else self.queue_name
         default_options = self.options.copy()
@@ -59,24 +52,25 @@ class RoleDecorator[**P, R, D: SerializedData]:
         options = default_options
 
         if serializer is None:
-            return Role(
+            role = Role(
                 fn=fn,
                 name=name,
                 serializer=_serializer.str_serializer,
                 deserializer=deserializer or self.deserializer,
-                role_hanger=role_hanger or self.role_hanger,
-                queue_factory=queue_factory,
+                queue_factory=self.queue_factory,
                 queue_name=queue_name,
                 **options,
             )
         else:
-            return Role(
+            role = Role(
                 fn=fn,
                 name=name,
                 serializer=serializer,
                 deserializer=deserializer or self.deserializer,
-                role_hanger=role_hanger or self.role_hanger,
-                queue_factory=queue_factory,
+                queue_factory=self.queue_factory,
                 queue_name=queue_name,
                 **options,
             )
+
+        self.role_hanger.put(role)
+        return role
