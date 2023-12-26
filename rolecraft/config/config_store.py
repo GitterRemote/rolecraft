@@ -1,13 +1,14 @@
 import abc
 import dataclasses
+from collections.abc import Callable
 from typing import Any, Protocol, Self, Unpack
 
 from rolecraft.broker import Broker
 
 from .queue_config import (
+    AllQueueConfigKeys,
     IncompleteQueueConfig,
     QueueConfig,
-    AllQueueConfigKeys,
 )
 
 
@@ -17,6 +18,7 @@ class ConfigFetcher(Protocol):
         queue_name: str | None = None,
         **kwds: Unpack[AllQueueConfigKeys[M]],
     ) -> QueueConfig[M]:
+        """Fetches QueueConfig for a specific queue. If the queue name is None, it will return the default QueueConfig."""
         ...
 
 
@@ -30,6 +32,7 @@ class ConfigStore(abc.ABC):
     QueueConfigType = QueueConfig[Any] | IncompleteQueueConfig[Any]
     QueueConfigsType = dict[str, QueueConfig[Any]]
     BrokerQueueConfigsType = dict[Broker[Any], QueueConfig[Any]]
+    QueueToBrokerType = Callable[[str], Broker[Any] | None]
 
     @abc.abstractmethod
     def __init__(
@@ -37,6 +40,7 @@ class ConfigStore(abc.ABC):
         queue_config: QueueConfigType | None = None,
         queue_configs: dict[str, QueueConfig[Any]] | None = None,
         broker_queue_configs: BrokerQueueConfigsType | None = None,
+        queue_to_broker: QueueToBrokerType | None = None,
     ) -> None:
         raise NotImplementedError
 
@@ -59,6 +63,7 @@ class DefaultConfigStore(ConfigStore, ConfigFetcher):
     broker_queue_configs: ConfigStore.BrokerQueueConfigsType = (
         dataclasses.field(default_factory=dict)
     )
+    queue_to_broker: ConfigStore.QueueToBrokerType = dict[str, None]().get
 
     @classmethod
     def set(cls, store: Self):
@@ -84,9 +89,12 @@ class DefaultConfigStore(ConfigStore, ConfigFetcher):
         **kwds: Unpack[AllQueueConfigKeys[O]],
     ) -> QueueConfig[O] | QueueConfig[Any]:
         # TODO: raise ValueError if broker/encoder/middlewares are set to None
-        config = self._get_default_queue_config(
-            queue_name, broker=kwds.get("broker")
-        )
+        broker = kwds.get("broker")
+
+        if not broker and queue_name is not None:
+            broker = self.queue_to_broker(queue_name)
+
+        config = self._get_default_queue_config(queue_name, broker=broker)
 
         if kwds:
             config = dataclasses.replace(config, **kwds)
@@ -98,24 +106,21 @@ class DefaultConfigStore(ConfigStore, ConfigFetcher):
         queue_name: str | None,
         broker: Broker[Any] | None,
     ) -> QueueConfig[Any]:
-        config = self.queue_configs.get(queue_name) if queue_name else None
+        if queue_name and (config := self.queue_configs.get(queue_name)):
+            return config
 
-        if not config:
-            if broker:
-                config = self.broker_queue_configs.get(broker)
+        if broker and (config := self.broker_queue_configs.get(broker)):
+            return config
 
-            if not config:
-                config = self.queue_config
+        if isinstance(self.queue_config, IncompleteQueueConfig):
+            if not broker:
+                raise IncompleteConfigError()
 
-                if not isinstance(config, QueueConfig):
-                    if not broker:
-                        raise IncompleteConfigError()
+            return dataclasses.replace(
+                self.queue_config, broker=broker
+            ).to_queue_config()
 
-                    config = dataclasses.replace(
-                        config, broker=broker
-                    ).to_queue_config()
-
-        return config
+        return self.queue_config
 
 
 default: ConfigStore | None = None
