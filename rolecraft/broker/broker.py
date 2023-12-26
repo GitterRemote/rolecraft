@@ -1,5 +1,12 @@
 import abc
 from abc import abstractmethod
+from typing import TypedDict
+
+
+class EnqueueOptions(TypedDict, total=False):
+    priority: int
+    delay_millis: int
+    create_queue: bool
 
 
 class ReceiveFuture[Message](abc.ABC):
