@@ -1,13 +1,15 @@
+from collections import defaultdict
 from typing import Protocol
-from rolecraft.broker import Broker
-from rolecraft.role_lib import RoleHanger
+
 from rolecraft.config import ConfigStore
+from rolecraft.queue_factory import QueueAndNameKeys
+from rolecraft.role_lib import RoleHanger
 
 
 class QueueDiscovery(Protocol):
     def __call__(
         self, config_store: ConfigStore | None = None
-    ) -> dict[str, Broker | None]:
+    ) -> QueueAndNameKeys:
         """Returns: mapping from queue name to the broker
 
         No need to care about QueueConfigOptions bound to the Role. That's role's QueueConfigOptions instead of queue's QueueConfigOptions.
@@ -28,14 +30,26 @@ class DefaultQueueDiscovery(QueueDiscovery):
 
     def __call__(
         self, config_store: ConfigStore | None = None
-    ) -> dict[str, Broker | None]:
-        queue_names = dict[str, Broker | None]()
+    ) -> QueueAndNameKeys:
+        queue_names_by_broker = defaultdict(list[str])
+        queue_names: list[str] = []
+        rv = QueueAndNameKeys(
+            queue_names=queue_names,
+            queue_names_by_broker=queue_names_by_broker,
+        )
+
         for role in self.role_hanger or ():
-            if role.queue_name:
-                broker = role.options.get("broker")
-                queue_names[role.queue_name] = broker
+            if not role.queue_name:
+                continue
+            broker = role.options.get("broker")
+            if broker:
+                queue_names_by_broker[broker].append(role.queue_name)
+            else:
+                queue_names.append(role.queue_name)
 
         config_store = config_store or self.config_store
         if config_store:
-            queue_names.update(config_store.queue_names_with_broker)
-        return queue_names
+            queue_names_by_broker.update(
+                config_store.parsed_queue_names_by_broker
+            )
+        return rv
