@@ -7,7 +7,7 @@ from . import queue_discovery as _queue_discovery
 from . import role_lib as _role
 from . import worker as _worker
 from . import worker_pool as _worker_pool
-from .config import ConfigStore
+from .config import ConfigStore, DefaultConfigStore
 from .consumer import ConsumerFactory
 from .queue_discovery import QueueDiscovery
 from .queue_factory import QueueAndNameKeys, QueueFactory
@@ -28,7 +28,9 @@ class ServiceFactory:
         worker_pool_factory: Callable[[], WorkerPool] | None = None,
         role_hanger: RoleHanger | None = None,
     ) -> None:
-        self.queue_factory = queue_factory or QueueFactory()
+        self.queue_factory = queue_factory or QueueFactory(
+            config_fetcher=DefaultConfigStore.get().fetcher
+        )
         self.consumer_factory = (
             consumer_factory or _consumer.DefaultConsumerFactory()
         )
