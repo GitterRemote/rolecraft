@@ -77,25 +77,9 @@ class InjectableConfig[Q: QueueConfig[Any] | IncompleteQueueConfig[Any]]:
             queue_config=config.queue_config,
             queue_configs=queue_configs,
             broker_queue_configs=broker_queue_configs,
-            queue_to_broker=self._create_queue_to_broker_resolver(),
+            queue_to_broker=self.queue_to_broker,
+            queue_names_by_broker=self.queue_names_by_broker,
         )
-
-    def _create_queue_to_broker_resolver(
-        self,
-    ) -> Callable[[str], Broker[Any] | None]:
-        queue_broker_mapping: dict[str, Broker[Any]] = {}
-        for broker, queue_names in self.queue_names_by_broker.items():
-            for queue_name in queue_names:
-                queue_broker_mapping[queue_name] = broker
-
-        resolver = self.queue_to_broker
-
-        def _resovler(queue_name: str) -> Broker[Any] | None:
-            if broker := queue_broker_mapping.get(queue_name):
-                return broker
-            return resolver(queue_name) if resolver else None
-
-        return _resovler
 
 
 @dataclasses.dataclass
