@@ -3,8 +3,6 @@ import typing
 from collections.abc import Callable
 from typing import Any, TypeVar, Unpack
 
-from rolecraft import encoder as _encoder
-from rolecraft import middleware as _middleware
 from rolecraft.broker import Broker, HeaderBytesRawMessage
 from rolecraft.encoder import Encoder
 
@@ -12,8 +10,8 @@ from . import config_store as _config_store
 from .config_store import ConfigStore
 from .queue_config import (
     IncompleteQueueConfig,
+    PartialQueueConfigOptions,
     QueueConfig,
-    QueueConfigKeys,
 )
 
 M_co = TypeVar("M_co", covariant=True)
@@ -31,7 +29,7 @@ class ConfigurableBrokerConfig[M_co]:
         queue_name: str,
         *,
         encoder: Encoder[M_co] | None = None,
-        **kwds: Unpack[QueueConfigKeys],
+        **kwds: Unpack[PartialQueueConfigOptions],
     ) -> typing.Self:
         if encoder:
             config = dataclasses.replace(
@@ -111,7 +109,7 @@ class ConfigurableDefaultConfig[M](InjectableConfig[QueueConfig[M]]):
         *,
         broker: Broker[M] | None = None,
         encoder: Encoder[M] | None = None,
-        **kwds: Unpack[QueueConfigKeys],
+        **kwds: Unpack[PartialQueueConfigOptions],
     ) -> typing.Self:
         ...
 
@@ -122,7 +120,7 @@ class ConfigurableDefaultConfig[M](InjectableConfig[QueueConfig[M]]):
         *,
         broker: Broker[O],
         encoder: Encoder[O],
-        **kwds: Unpack[QueueConfigKeys],
+        **kwds: Unpack[PartialQueueConfigOptions],
     ) -> typing.Self:
         ...
 
@@ -132,7 +130,7 @@ class ConfigurableDefaultConfig[M](InjectableConfig[QueueConfig[M]]):
         *,
         broker: Broker[Any] | None = None,
         encoder: Encoder[Any] | None = None,
-        **kwds: Unpack[QueueConfigKeys],
+        **kwds: Unpack[PartialQueueConfigOptions],
     ) -> typing.Self:
         config = dataclasses.replace(self.queue_config, **kwds)
         if broker:
@@ -147,7 +145,7 @@ class ConfigurableDefaultConfig[M](InjectableConfig[QueueConfig[M]]):
         self,
         broker: Broker[O],
         encoder: Encoder[O],
-        **kwds: Unpack[QueueConfigKeys],
+        **kwds: Unpack[PartialQueueConfigOptions],
     ) -> ConfigurableBrokerConfig[O]:
         ...
 
@@ -155,7 +153,7 @@ class ConfigurableDefaultConfig[M](InjectableConfig[QueueConfig[M]]):
     def add_broker_config(
         self,
         broker: Broker[M],
-        **kwds: Unpack[QueueConfigKeys],
+        **kwds: Unpack[PartialQueueConfigOptions],
     ) -> ConfigurableBrokerConfig[M]:
         ...
 
@@ -163,7 +161,7 @@ class ConfigurableDefaultConfig[M](InjectableConfig[QueueConfig[M]]):
         self,
         broker: Broker[T],
         encoder: Encoder[T] | None = None,
-        **kwds: Unpack[QueueConfigKeys],
+        **kwds: Unpack[PartialQueueConfigOptions],
     ) -> ConfigurableBrokerConfig[T] | ConfigurableBrokerConfig[M]:
         if encoder:
             config = dataclasses.replace(
@@ -192,18 +190,14 @@ class ConfigurableConfig(
 ):
     queue_config: IncompleteQueueConfig[
         HeaderBytesRawMessage
-    ] = IncompleteQueueConfig(
-        middlewares=_middleware.MiddlewareList([_middleware.Retryable()]),
-        encoder=_encoder.HeaderBytesEncoder(),
-        consumer_wait_time_seconds=10 * 60,
-    )
+    ] = IncompleteQueueConfig.default()
 
     def update_default[M](
         self,
         *,
         broker: Broker[M],
         encoder: Encoder[M] | None = None,
-        **kwds: Unpack[QueueConfigKeys],
+        **kwds: Unpack[PartialQueueConfigOptions],
     ) -> (
         ConfigurableDefaultConfig[M]
         | ConfigurableDefaultConfig[HeaderBytesRawMessage]
@@ -240,7 +234,7 @@ class ConfigurableConfig(
         self,
         broker: Broker[M],
         encoder: Encoder[M],
-        **kwds: Unpack[QueueConfigKeys],
+        **kwds: Unpack[PartialQueueConfigOptions],
     ) -> ConfigurableBrokerConfig[M]:
         config = typing.cast(
             QueueConfig[M],
@@ -257,7 +251,7 @@ class ConfigurableConfig(
         queue_name: str,
         broker: Broker[M] | Broker[HeaderBytesRawMessage],
         encoder: Encoder[M] | None = None,
-        **kwds: Unpack[QueueConfigKeys],
+        **kwds: Unpack[PartialQueueConfigOptions],
     ) -> typing.Self:
         if encoder:
             config = dataclasses.replace(

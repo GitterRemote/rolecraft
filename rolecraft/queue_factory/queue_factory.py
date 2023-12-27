@@ -2,11 +2,12 @@ import typing
 from typing import Unpack
 
 from rolecraft import config as _config
-from rolecraft.config import AllQueueConfigKeys, ConfigFetcher, ConfigStore
+from rolecraft.config import ConfigStore
 from rolecraft.queue import MessageQueue
 
 from . import queue_builder as _queue_builder
-from .queue_builder import QueueAndNameKeys
+from .config_fetcher import ConfigFetcher
+from .queue_builder import QueueConfigOptions, QueueAndNameKeys
 
 
 class QueueFactory:
@@ -29,7 +30,7 @@ class QueueFactory:
         self,
         *,
         queue_name: str | None = None,
-        **kwds: Unpack[AllQueueConfigKeys],
+        **kwds: Unpack[QueueConfigOptions],
     ) -> MessageQueue:
         ...
 
@@ -38,9 +39,11 @@ class QueueFactory:
         *,
         queue_name: str | None = None,
         raw_queue: MessageQueue | None = None,
-        **kwds: Unpack[AllQueueConfigKeys],
+        **kwds: Unpack[QueueConfigOptions],
     ) -> MessageQueue:
         """Always return the same Queue instance if it is the same name."""
+        # Be mind that the function can called more than once if another thread makes an additional call before the initial call has been completed and cached.
+
         if raw_queue:
             if queue_name is not None or kwds:
                 raise ValueError(
