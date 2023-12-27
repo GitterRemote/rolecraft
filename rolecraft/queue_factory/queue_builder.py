@@ -1,8 +1,9 @@
 from typing import TypedDict, Unpack
 
 from rolecraft.broker import Broker
-from rolecraft.config import AllQueueConfigKeys, ConfigFetcher, QueueConfig
 from rolecraft.queue import MessageQueue
+
+from .config_fetcher import QueueConfigOptions, ConfigFetcher, QueueConfig
 
 
 class QueueAndNameKeys(TypedDict, total=False):
@@ -20,7 +21,7 @@ class QueueBuilder:
     ):
         self.config_fetcher = config_fetcher
 
-    def build_one(self, queue_name: str, **kwds: Unpack[AllQueueConfigKeys]):
+    def build_one(self, queue_name: str, **kwds: Unpack[QueueConfigOptions]):
         raw_queue = self._build_raw_queue(queue_name, **kwds)
         return self.wrap(raw_queue)
 
@@ -49,13 +50,13 @@ class QueueBuilder:
         return [self.wrap(q) for q in all_queues]
 
     def _build_raw_queues(
-        self, queue_names, **kwds: Unpack[AllQueueConfigKeys]
+        self, queue_names, **kwds: Unpack[QueueConfigOptions]
     ):
         for queue_name in queue_names:
             yield self._build_raw_queue(queue_name, **kwds)
 
     def _build_raw_queue(
-        self, queue_name: str, **kwds: Unpack[AllQueueConfigKeys]
+        self, queue_name: str, **kwds: Unpack[QueueConfigOptions]
     ):
         config = self.config_fetcher(queue_name, **kwds)
         return self._new_queue(queue_name, config)

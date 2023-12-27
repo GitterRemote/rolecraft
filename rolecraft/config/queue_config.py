@@ -1,39 +1,19 @@
 import dataclasses
-from typing import TypedDict, TypeVar
+from typing import Self, TypeVar
 
+from rolecraft import encoder as _encoder
+from rolecraft import middleware as _middleware
 from rolecraft.broker import Broker
 from rolecraft.encoder import Encoder
-from rolecraft.middleware import Middleware, MiddlewareList
+from rolecraft.queue_config import PartialQueueConfigOptions, QueueConfig
+
+PartialQueueConfigOptions = PartialQueueConfigOptions
 
 M_co = TypeVar("M_co", covariant=True)
 
 
-class QueueConfigKeys(TypedDict, total=False):
-    middlewares: list[Middleware] | MiddlewareList
-    consumer_wait_time_seconds: int | None
-
-
-class AllQueueConfigKeys[M](QueueConfigKeys, total=False):
-    encoder: Encoder[M]
-    broker: Broker[M]
-
-
 @dataclasses.dataclass(kw_only=True, frozen=True)
-class _QueueConfig:
-    middlewares: list[Middleware] | MiddlewareList = dataclasses.field(
-        default_factory=MiddlewareList
-    )
-    consumer_wait_time_seconds: int | None = None
-
-
-@dataclasses.dataclass(kw_only=True, frozen=True)
-class QueueConfig[M_co](_QueueConfig):
-    encoder: Encoder[M_co]
-    broker: Broker[M_co]
-
-
-@dataclasses.dataclass(kw_only=True, frozen=True)
-class IncompleteQueueConfig[M_co](_QueueConfig):
+class IncompleteQueueConfig[M_co](QueueConfig):
     encoder: Encoder[M_co]
     broker: Broker[M_co] | None = None
 
@@ -41,4 +21,12 @@ class IncompleteQueueConfig[M_co](_QueueConfig):
         assert self.broker
         return QueueConfig(
             **{f.name: getattr(self, f.name) for f in dataclasses.fields(self)}
+        )
+
+    @classmethod
+    def default(cls) -> Self:
+        return cls(
+            middlewares=_middleware.MiddlewareList([_middleware.Retryable()]),
+            encoder=_encoder.HeaderBytesEncoder(),
+            consumer_wait_time_seconds=10 * 60,
         )

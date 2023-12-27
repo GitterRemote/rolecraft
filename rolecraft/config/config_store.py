@@ -1,25 +1,15 @@
 import abc
 import dataclasses
 from collections.abc import Callable
-from typing import Any, Protocol, Self, Unpack
+from typing import Any, Self, Unpack
 
 from rolecraft.broker import Broker
-
-from .queue_config import (
-    AllQueueConfigKeys,
-    IncompleteQueueConfig,
-    QueueConfig,
+from rolecraft.queue_factory.config_fetcher import (
+    QueueConfigOptions,
+    ConfigFetcher,
 )
 
-
-class ConfigFetcher(Protocol):
-    def __call__[M](
-        self,
-        queue_name: str | None = None,
-        **kwds: Unpack[AllQueueConfigKeys[M]],
-    ) -> QueueConfig[M]:
-        """Fetches QueueConfig for a specific queue. If the queue name is None, it will return the default QueueConfig."""
-        ...
+from .queue_config import IncompleteQueueConfig, QueueConfig
 
 
 class IncompleteConfigError(Exception):
@@ -86,7 +76,7 @@ class DefaultConfigStore(ConfigStore, ConfigFetcher):
     def __call__[O](
         self,
         queue_name: str | None = None,
-        **kwds: Unpack[AllQueueConfigKeys[O]],
+        **kwds: Unpack[QueueConfigOptions[O]],
     ) -> QueueConfig[O] | QueueConfig[Any]:
         # TODO: raise ValueError if broker/encoder/middlewares are set to None
         broker = kwds.get("broker")

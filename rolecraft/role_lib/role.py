@@ -2,19 +2,18 @@ import typing
 from collections.abc import Callable
 from typing import TypedDict, Unpack
 
-from rolecraft.config import AllQueueConfigKeys
 from rolecraft.message import Message
 from rolecraft.queue import EnqueueOptions, MessageQueue
-from rolecraft.queue_factory import QueueFactory
+from rolecraft.queue_factory import QueueConfigOptions, QueueFactory
 
 from .serializer import ParamsSerializerType, SerializedData
 
 
-class RoleDefaultOptions(AllQueueConfigKeys, EnqueueOptions, total=False):
+class RoleDefaultOptions(QueueConfigOptions, EnqueueOptions, total=False):
     ...
 
 
-class DiaptchMessageOptions(AllQueueConfigKeys, EnqueueOptions, total=False):
+class DiaptchMessageOptions(QueueConfigOptions, EnqueueOptions, total=False):
     ...
 
 
@@ -85,7 +84,7 @@ class Role[**P, R, D: SerializedData]:
         if raw_queue:
             queue = self.queue_factory.get_or_bulid(raw_queue=raw_queue)
         else:
-            queue_configs = self._subset_dict(options, AllQueueConfigKeys)
+            queue_configs = self._subset_dict(options, QueueConfigOptions)
             queue = self.queue_factory.get_or_bulid(
                 queue_name=queue_name or self.queue_name or "default",
                 **queue_configs,
