@@ -32,5 +32,5 @@ class IncompleteQueueConfig[M_co](PartialQueueConfig):
         return cls(
             middlewares=_middleware.MiddlewareList([_middleware.Retryable()]),
             encoder=_encoder.HeaderBytesEncoder(),
-            consumer_wait_time_seconds=10 * 60,
+            wait_time_seconds=10 * 60,
         )

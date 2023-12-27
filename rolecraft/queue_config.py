@@ -11,7 +11,7 @@ M_co = TypeVar("M_co", covariant=True)
 
 class PartialQueueConfigOptions(TypedDict, total=False):
     middlewares: Sequence[Middleware] | MiddlewareList
-    consumer_wait_time_seconds: int | None
+    wait_time_seconds: int | None
 
 
 class QueueConfigOptions[M](PartialQueueConfigOptions, total=False):
@@ -24,7 +24,7 @@ class PartialQueueConfig:
     middlewares: Sequence[Middleware] | MiddlewareList = dataclasses.field(
         default_factory=MiddlewareList
     )
-    consumer_wait_time_seconds: int | None = None
+    wait_time_seconds: int | None = None
 
 
 @dataclasses.dataclass(kw_only=True, frozen=True)

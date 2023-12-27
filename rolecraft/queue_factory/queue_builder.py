@@ -73,5 +73,5 @@ class QueueBuilder:
             name=name,
             broker=config.broker,
             encoder=config.encoder,
-            wait_time_seconds=config.consumer_wait_time_seconds,
+            wait_time_seconds=config.wait_time_seconds,
         )

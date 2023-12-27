@@ -28,8 +28,8 @@ def test_add_broker_config(configurable_config, broker, encoder, middlewares):
     assert queue_config.encoder is encoder
     assert queue_config.middlewares is middlewares
     assert (
-        queue_config.consumer_wait_time_seconds
-        == configurable_config.queue_config.consumer_wait_time_seconds
+        queue_config.wait_time_seconds
+        == configurable_config.queue_config.wait_time_seconds
     )
 
 
