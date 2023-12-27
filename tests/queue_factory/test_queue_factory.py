@@ -126,13 +126,8 @@ def test_get_and_build_cache(queue_factory, broker2, encoder2):
         assert build_method.call_count == 1
 
 
-def test_build_queues_default_queue(queue_factory, queue_config):
-    queues = queue_factory.build_queues()
-    assert len(queues) == 1
-    queue = queues[0]
-    assert queue.name == "default"
-    assert queue.broker is queue_config.broker
-    assert queue.encoder is queue_config.encoder
+def test_build_queues_empty(queue_factory, queue_config):
+    assert not queue_factory.build_queues()
 
 
 def test_build_queues_with_queue_names(queue_factory, queue_config):
