@@ -54,9 +54,7 @@ class ServiceFactory:
         The consumer will use the queue names and paired brokers to fetch messages."""
 
         if not kwds:
-            kwds["queue_names_with_broker"] = self.queue_discovery(
-                config_store=config_store
-            )
+            kwds = self.queue_discovery(config_store=config_store)
 
         queues = self.queue_factory.build_queues(
             config_fetcher=config_store.fetcher if config_store else None,

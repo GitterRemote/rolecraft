@@ -1,12 +1,13 @@
 import abc
 import dataclasses
+from collections import defaultdict
 from collections.abc import Callable
 from typing import Any, Self, Unpack
 
 from rolecraft.broker import Broker
 from rolecraft.queue_factory.config_fetcher import (
-    QueueConfigOptions,
     ConfigFetcher,
+    QueueConfigOptions,
 )
 
 from .queue_config import IncompleteQueueConfig, QueueConfig
@@ -23,6 +24,7 @@ class ConfigStore(abc.ABC):
     QueueConfigsType = dict[str, QueueConfig[Any]]
     BrokerQueueConfigsType = dict[Broker[Any], QueueConfig[Any]]
     QueueToBrokerType = Callable[[str], Broker[Any] | None]
+    QueueNamesByBrokerType = dict[Broker[Any], list[str]]
 
     @abc.abstractmethod
     def __init__(
@@ -31,6 +33,7 @@ class ConfigStore(abc.ABC):
         queue_configs: dict[str, QueueConfig[Any]] | None = None,
         broker_queue_configs: BrokerQueueConfigsType | None = None,
         queue_to_broker: QueueToBrokerType | None = None,
+        queue_names_by_broker: QueueNamesByBrokerType | None = None,
     ) -> None:
         raise NotImplementedError
 
@@ -45,8 +48,8 @@ class ConfigStore(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def queue_names_with_broker(self) -> dict[str, Broker | None]:
-        """queue names from queue_configs and queue_to_broker configuration."""
+    def parsed_queue_names_by_broker(self) -> QueueNamesByBrokerType:
+        """queue names from queue_names_by_broker if exists otherwise parsed from queue_configs"""
         raise NotImplementedError
 
 
@@ -59,26 +62,43 @@ class DefaultConfigStore(ConfigStore, ConfigFetcher):
     broker_queue_configs: ConfigStore.BrokerQueueConfigsType = (
         dataclasses.field(default_factory=dict)
     )
+    queue_names_by_broker: dict[Broker[Any], list[str]] = dataclasses.field(
+        default_factory=dict
+    )
     queue_to_broker: ConfigStore.QueueToBrokerType = dict[str, None]().get
+
+    _default: ConfigStore | None = None
 
     @classmethod
     def set(cls, store: Self):
         """set the store to the global variable as a default store"""
-        global default
-        default = store
+        cls._default = store
 
     @classmethod
-    def get(cls) -> "ConfigStore | None":
-        global default
-        return default
+    def get(cls) -> ConfigStore | None:
+        return cls._default
 
     def set_as_defaut(self):
         self.set(self)
 
     @property
+    def parsed_queue_names_by_broker(
+        self,
+    ) -> ConfigStore.QueueNamesByBrokerType:
+        if self.queue_names_by_broker:
+            return self.queue_names_by_broker
+
+        queue_names = defaultdict[Broker[Any], list[str]](list)
+        for name, queue_config in self.queue_configs.items():
+            queue_names[queue_config.broker].append(name)
+
+        return queue_names
+
+    @property
     def fetcher(self):
         return self
 
+    # ConfigFetcher implementation
     def __call__[O](
         self,
         queue_name: str | None = None,
@@ -117,6 +137,3 @@ class DefaultConfigStore(ConfigStore, ConfigFetcher):
             ).to_queue_config()
 
         return self.queue_config
-
-
-default: ConfigStore | None = None
