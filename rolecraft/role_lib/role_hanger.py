@@ -5,7 +5,7 @@ import typing
 from typing import Any
 
 if typing.TYPE_CHECKING:
-    from .role_lib import Role
+    from . import Role
 
 
 class DuplicatedRoleError(Exception):
