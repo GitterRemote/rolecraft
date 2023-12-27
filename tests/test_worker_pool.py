@@ -2,7 +2,7 @@ import pytest
 import threading
 import time
 from rolecraft import worker_pool as worker_pool_mod
-from rolecraft import local as local_mod
+from rolecraft import thread_local as local_mod
 
 
 @pytest.fixture()
@@ -51,7 +51,7 @@ def test_thread_local_stop_event(worker_pool):
     data = set()
 
     def put(i):
-        event = local_mod.local.stop_event
+        event = local_mod.thread_local.stop_event
         event.wait(3600)
         data.add(i)
 
@@ -74,7 +74,7 @@ def test_single_thread_worker_pool(single_thread_worker_pool):
     data = set()
 
     def put(i):
-        event = local_mod.local.stop_event
+        event = local_mod.thread_local.stop_event
         event.wait(3600)
         data.add(i)
 

@@ -1,7 +1,7 @@
 import threading
 
 
-class Local:
+class ThreadLocal:
     def __init__(self, local: threading.local) -> None:
         self._thread_local = local
 
@@ -14,4 +14,4 @@ class Local:
         self._thread_local.stop_event = value
 
 
-local = Local(threading.local())
+thread_local = ThreadLocal(threading.local())
