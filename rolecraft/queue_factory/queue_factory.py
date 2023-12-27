@@ -1,13 +1,11 @@
 import typing
 from typing import Unpack
 
-from rolecraft import config as _config
-from rolecraft.config import ConfigStore
 from rolecraft.queue import MessageQueue
 
 from . import queue_builder as _queue_builder
 from .config_fetcher import ConfigFetcher
-from .queue_builder import QueueConfigOptions, QueueAndNameKeys
+from .queue_builder import QueueAndNameKeys, QueueConfigOptions
 
 
 class QueueFactory:
@@ -80,12 +78,9 @@ class QueueFactory:
 
     def _get_queue_builder(self, config_fetcher: ConfigFetcher | None = None):
         config_fetcher = config_fetcher or self._get_config_fetcher()
+        if not config_fetcher:
+            raise ValueError("config_fetcher must exist")
         return _queue_builder.QueueBuilder(config_fetcher=config_fetcher)
 
-    def _get_config_fetcher(self) -> ConfigFetcher:
-        return self.config_fetcher or self._get_config_store().fetcher
-
-    def _get_config_store(self) -> ConfigStore:
-        store = _config.DefaultConfigStore.get()
-        assert store
-        return store
+    def _get_config_fetcher(self) -> ConfigFetcher | None:
+        return self.config_fetcher
