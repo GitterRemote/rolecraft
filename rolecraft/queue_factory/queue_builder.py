@@ -7,7 +7,7 @@ from rolecraft.queue import MessageQueue
 
 class QueueAndNameKeys(TypedDict, total=False):
     queue_names: list[str] | None
-    queue_names_per_broker: dict[Broker, list[str]] | None
+    queue_names_by_broker: dict[Broker, list[str]] | None
     raw_queues: list[MessageQueue] | None
 
 
@@ -28,15 +28,15 @@ class QueueBuilder:
         return self._build_queues(**kwds)
 
     def _build_queues(
-        self, queue_names, queue_names_per_broker, raw_queues
+        self, queue_names, queue_names_by_broker, raw_queues
     ) -> list[MessageQueue]:
         all_queues = []
 
         if queue_names:
             all_queues.extend(self._build_raw_queues(queue_names))
 
-        if queue_names_per_broker:
-            for broker, queue_names in queue_names_per_broker.items():
+        if queue_names_by_broker:
+            for broker, queue_names in queue_names_by_broker.items():
                 all_queues.extend(
                     self._build_raw_queues(queue_names, broker=broker)
                 )
