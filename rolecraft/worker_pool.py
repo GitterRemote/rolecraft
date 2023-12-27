@@ -3,7 +3,7 @@ import abc
 from collections.abc import Callable
 import concurrent.futures
 import threading
-from rolecraft import local as _local_mod
+from rolecraft import thread_local as _local
 
 
 class WorkerPool(abc.ABC):
@@ -95,6 +95,6 @@ class ThreadWorkerPool(WorkerPool):
             assert fs.done()
 
     def _execute_fn(self, fn: Callable, args, kwargs):
-        _local_mod.local.stop_event = self._stop_event
+        _local.thread_local.stop_event = self._stop_event
 
         return fn(*args, **kwargs)
