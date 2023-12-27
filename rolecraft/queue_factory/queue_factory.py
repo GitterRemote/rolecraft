@@ -1,18 +1,12 @@
 import typing
-from typing import TypedDict, Unpack
+from typing import Unpack
 
 from rolecraft import config as _config
-from rolecraft.broker import Broker
 from rolecraft.config import AllQueueConfigKeys, ConfigFetcher, ConfigStore
 from rolecraft.queue import MessageQueue
 
 from . import queue_builder as _queue_builder
-
-
-class QueueAndNameKeys(TypedDict, total=False):
-    queue_names: list[str] | None
-    queue_names_per_broker: dict[Broker, list[str]] | None
-    raw_queues: list[MessageQueue] | None
+from .queue_builder import QueueAndNameKeys
 
 
 class QueueFactory:

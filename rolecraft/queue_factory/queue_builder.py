@@ -1,8 +1,14 @@
-from typing import Unpack
+from typing import TypedDict, Unpack
 
 from rolecraft.broker import Broker
 from rolecraft.config import AllQueueConfigKeys, ConfigFetcher, QueueConfig
 from rolecraft.queue import MessageQueue
+
+
+class QueueAndNameKeys(TypedDict, total=False):
+    queue_names: list[str] | None
+    queue_names_per_broker: dict[Broker, list[str]] | None
+    raw_queues: list[MessageQueue] | None
 
 
 class QueueBuilder:
@@ -18,15 +24,8 @@ class QueueBuilder:
         raw_queue = self._build_raw_queue(queue_name, **kwds)
         return self.wrap(raw_queue)
 
-    def build(
-        self,
-        queue_names: list[str] | None = None,
-        queue_names_per_broker: dict[Broker, list[str]] | None = None,
-        raw_queues: list[MessageQueue] | None = None,
-    ) -> list[MessageQueue]:
-        return self._build_queues(
-            queue_names, queue_names_per_broker, raw_queues
-        )
+    def build(self, **kwds: Unpack[QueueAndNameKeys]) -> list[MessageQueue]:
+        return self._build_queues(**kwds)
 
     def _build_queues(
         self, queue_names, queue_names_per_broker, raw_queues
