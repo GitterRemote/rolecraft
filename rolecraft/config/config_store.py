@@ -43,6 +43,12 @@ class ConfigStore(abc.ABC):
     def fetcher(self) -> ConfigFetcher:
         raise NotImplementedError
 
+    @property
+    @abc.abstractmethod
+    def queue_names_with_broker(self) -> dict[str, Broker | None]:
+        """queue names from queue_configs and queue_to_broker configuration."""
+        raise NotImplementedError
+
 
 @dataclasses.dataclass(kw_only=True)
 class DefaultConfigStore(ConfigStore, ConfigFetcher):
