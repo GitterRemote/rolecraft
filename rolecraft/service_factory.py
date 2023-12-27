@@ -3,13 +3,13 @@ from collections.abc import Callable
 from typing import Unpack
 
 from . import consumer as _consumer
-from . import role_hanger as _role_hanger
+from . import role_lib as _role
 from . import worker as _worker
 from . import worker_pool as _worker_pool
 from .config import ConfigStore
 from .consumer import ConsumerFactory
 from .queue_factory import QueueAndNameKeys, QueueFactory
-from .role_hanger import RoleHanger
+from .role_lib import RoleHanger
 from .service import Service
 from .worker_pool import WorkerPool
 
@@ -32,7 +32,7 @@ class ServiceFactory:
         self.worker_pool_factory = (
             worker_pool_factory or _worker_pool.ThreadWorkerPool
         )
-        self.role_hanger = role_hanger or _role_hanger.default_role_hanger
+        self.role_hanger = role_hanger or _role.default_role_hanger
 
     def create(
         self,
