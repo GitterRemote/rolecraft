@@ -52,4 +52,8 @@ class DefaultQueueDiscovery(QueueDiscovery):
             queue_names_by_broker.update(
                 config_store.parsed_queue_names_by_broker
             )
+
+        if not queue_names_by_broker and not queue_names:
+            queue_names.append("default")
+
         return rv

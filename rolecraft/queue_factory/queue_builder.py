@@ -36,9 +36,6 @@ class QueueBuilder:
         if raw_queues := kwds.get("raw_queues"):
             all_queues.extend(raw_queues)
 
-        if not all_queues:
-            all_queues.append(self._get_default_queue())
-
         return all_queues
 
     def _build_queues(self, queue_names, **kwds: Unpack[QueueConfigOptions]):
@@ -50,12 +47,6 @@ class QueueBuilder:
     ):
         config = self.config_fetcher(queue_name, **kwds)
         return self._build_queue_with_config(queue_name, config)
-
-    def _get_default_queue(self) -> MessageQueue:
-        default_config = self.config_fetcher()
-        return self._build_queue_with_config(
-            queue_name="default", config=default_config
-        )
 
     def _build_queue_with_config(self, queue_name: str, config: QueueConfig):
         queue = self._new_queue(queue_name, config)
