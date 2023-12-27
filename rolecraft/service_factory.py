@@ -29,9 +29,6 @@ class ServiceFactory:
         role_hanger: RoleHanger | None = None,
     ) -> None:
         self.queue_factory = queue_factory or QueueFactory()
-        self.queue_discovery = (
-            queue_discovery or _queue_discovery.DefaultQueueDiscovery()
-        )
         self.consumer_factory = (
             consumer_factory or _consumer.DefaultConsumerFactory()
         )
@@ -39,6 +36,12 @@ class ServiceFactory:
             worker_pool_factory or _worker_pool.ThreadWorkerPool
         )
         self.role_hanger = role_hanger or _role.default_role_hanger
+        self.queue_discovery = (
+            queue_discovery
+            or _queue_discovery.DefaultQueueDiscovery(
+                role_hanger=self.role_hanger
+            )
+        )
 
     def create(
         self,
