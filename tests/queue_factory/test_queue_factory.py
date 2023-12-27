@@ -51,7 +51,7 @@ def test_get_and_build(queue_factory, queue_config):
     assert queue.name == "queue1"
     assert queue.broker is queue_config.broker
     assert queue.encoder is queue_config.encoder
-    assert queue.wait_time_seconds == queue_config.consumer_wait_time_seconds
+    assert queue.wait_time_seconds == queue_config.wait_time_seconds
 
 
 def test_get_and_build_with_params(
