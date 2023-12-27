@@ -1,12 +1,14 @@
-from collections.abc import Sequence
 import contextlib
 import logging
 import math
-import time
 import threading
-from rolecraft.queue import MessageQueue
+import time
+from collections.abc import Sequence
+
 from rolecraft.message import Message
-from rolecraft import notify_queue as _notify_queue
+from rolecraft.queue import MessageQueue
+
+from . import notify_queue as _notify_queue
 from .consumer_base import ConsumerBase
 
 logger = logging.getLogger(__name__)
