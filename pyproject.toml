@@ -23,3 +23,10 @@ dev = ["pytest"]
 
 
 [project.urls]
+
+[tool.ruff]
+line-length = 79
+
+[tool.ruff.format]
+docstring-code-format = true
+docstring-code-line-length = 79
