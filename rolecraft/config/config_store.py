@@ -75,7 +75,9 @@ class DefaultConfigStore(ConfigStore, ConfigFetcher):
         cls._default = store
 
     @classmethod
-    def get(cls) -> ConfigStore | None:
+    def get(cls) -> ConfigStore:
+        if not cls._default:
+            cls._default = cls(queue_config=IncompleteQueueConfig.default())
         return cls._default
 
     def set_as_defaut(self):

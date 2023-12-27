@@ -1,7 +1,7 @@
 from collections.abc import Callable
 from typing import Unpack
 
-from rolecraft.config import ConfigStore
+from rolecraft.config import ConfigStore, DefaultConfigStore
 from rolecraft.queue_factory import QueueFactory
 
 from . import role_hanger as _role_hanger
@@ -26,8 +26,9 @@ class RoleDecorator[**P, R, D: SerializedData]:
         self.serializer = serializer
         self.deserializer = deserializer or _serializer.default_serializer
 
+        config_store = config_store or DefaultConfigStore.get()
         self.queue_factory = queue_factory or QueueFactory(
-            config_fetcher=config_store.fetcher if config_store else None
+            config_fetcher=config_store.fetcher
         )
         self.role_hanger = role_hanger or _role_hanger.default_role_hanger
 
