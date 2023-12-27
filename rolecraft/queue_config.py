@@ -1,4 +1,5 @@
 import dataclasses
+from collections.abc import Sequence
 from typing import TypedDict, TypeVar
 
 from rolecraft.broker import Broker
@@ -9,7 +10,7 @@ M_co = TypeVar("M_co", covariant=True)
 
 
 class PartialQueueConfigOptions(TypedDict, total=False):
-    middlewares: list[Middleware] | MiddlewareList
+    middlewares: Sequence[Middleware] | MiddlewareList
     consumer_wait_time_seconds: int | None
 
 
@@ -20,7 +21,7 @@ class QueueConfigOptions[M](PartialQueueConfigOptions, total=False):
 
 @dataclasses.dataclass(kw_only=True, frozen=True)
 class PartialQueueConfig:
-    middlewares: list[Middleware] | MiddlewareList = dataclasses.field(
+    middlewares: Sequence[Middleware] | MiddlewareList = dataclasses.field(
         default_factory=MiddlewareList
     )
     consumer_wait_time_seconds: int | None = None

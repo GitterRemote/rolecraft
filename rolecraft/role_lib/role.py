@@ -82,10 +82,10 @@ class Role[**P, R, D: SerializedData]:
         options = defaults
 
         if raw_queue:
-            queue = self.queue_factory.get_or_bulid(raw_queue=raw_queue)
+            queue = self.queue_factory.get_or_build(raw_queue=raw_queue)
         else:
             queue_configs = self._subset_dict(options, QueueConfigOptions)
-            queue = self.queue_factory.get_or_bulid(
+            queue = self.queue_factory.get_or_build(
                 queue_name=queue_name or self.queue_name or "default",
                 **queue_configs,
             )
