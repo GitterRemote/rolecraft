@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import collections
+from collections.abc import Iterator
 import typing
 from typing import Any
 
@@ -22,6 +23,9 @@ class RoleHanger(collections.UserDict[str, "Role"]):
 
     def pick(self, role_name: str) -> Role | None:
         return self.get(role_name)
+
+    def __iter__(self) -> Iterator[Role]:
+        return iter(self.values())
 
 
 default_role_hanger = RoleHanger()

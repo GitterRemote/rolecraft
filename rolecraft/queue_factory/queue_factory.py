@@ -71,13 +71,10 @@ class QueueFactory:
     def build_queues(
         self,
         *,
-        auto_discorvery: bool = False,
         config_fetcher: ConfigFetcher | None = None,
         **kwds: Unpack[QueueAndNameKeys],
     ) -> list[MessageQueue]:
         """Always build brand new queues from the latest configuration."""
-        if auto_discorvery:
-            raise NotImplementedError
         builder = self._get_queue_builder(config_fetcher)
         return builder.build(**kwds)
 

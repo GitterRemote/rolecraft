@@ -3,11 +3,13 @@ from collections.abc import Callable
 from typing import Unpack
 
 from . import consumer as _consumer
+from . import queue_discovery as _queue_discovery
 from . import role_lib as _role
 from . import worker as _worker
 from . import worker_pool as _worker_pool
 from .config import ConfigStore
 from .consumer import ConsumerFactory
+from .queue_discovery import QueueDiscovery
 from .queue_factory import QueueAndNameKeys, QueueFactory
 from .role_lib import RoleHanger
 from .service import Service
@@ -21,11 +23,15 @@ class ServiceFactory:
         self,
         *,
         queue_factory: QueueFactory | None = None,
+        queue_discovery: QueueDiscovery | None = None,
         consumer_factory: ConsumerFactory | None = None,
         worker_pool_factory: Callable[[], WorkerPool] | None = None,
         role_hanger: RoleHanger | None = None,
     ) -> None:
         self.queue_factory = queue_factory or QueueFactory()
+        self.queue_discovery = (
+            queue_discovery or _queue_discovery.DefaultQueueDiscovery()
+        )
         self.consumer_factory = (
             consumer_factory or _consumer.DefaultConsumerFactory()
         )
@@ -40,8 +46,9 @@ class ServiceFactory:
         config_store: ConfigStore | None = None,
         **kwds: Unpack[QueueAndNameKeys],
     ) -> Service:
+        if not kwds:
+            kwds["queue_names_with_broker"] = self.queue_discovery()
         queues = self.queue_factory.build_queues(
-            auto_discorvery=True,
             config_fetcher=config_store.fetcher if config_store else None,
             **kwds,
         )

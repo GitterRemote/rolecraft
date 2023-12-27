@@ -9,6 +9,7 @@ from .config_fetcher import QueueConfigOptions, ConfigFetcher, QueueConfig
 class QueueAndNameKeys(TypedDict, total=False):
     queue_names: list[str] | None
     queue_names_by_broker: dict[Broker, list[str]] | None
+    queue_names_with_broker: dict[str, Broker | None] | None
     raw_queues: list[MessageQueue] | None
 
 
@@ -29,7 +30,11 @@ class QueueBuilder:
         return self._build_queues(**kwds)
 
     def _build_queues(
-        self, queue_names, queue_names_by_broker, raw_queues
+        self,
+        queue_names,
+        queue_names_by_broker,
+        raw_queues,
+        queue_names_with_broker,
     ) -> list[MessageQueue]:
         all_queues = []
 
@@ -41,6 +46,8 @@ class QueueBuilder:
                 all_queues.extend(
                     self._build_raw_queues(queue_names, broker=broker)
                 )
+        if queue_names_with_broker:
+            raise NotImplementedError
 
         all_queues.extend(raw_queues)
 
