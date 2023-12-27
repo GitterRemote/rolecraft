@@ -19,7 +19,7 @@ class QueueConfigOptions[M](PartialQueueConfigOptions, total=False):
 
 
 @dataclasses.dataclass(kw_only=True, frozen=True)
-class _QueueConfig:
+class PartialQueueConfig:
     middlewares: list[Middleware] | MiddlewareList = dataclasses.field(
         default_factory=MiddlewareList
     )
@@ -27,6 +27,6 @@ class _QueueConfig:
 
 
 @dataclasses.dataclass(kw_only=True, frozen=True)
-class QueueConfig[M_co](_QueueConfig):
+class QueueConfig[M_co](PartialQueueConfig):
     encoder: Encoder[M_co]
     broker: Broker[M_co]
