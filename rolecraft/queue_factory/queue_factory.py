@@ -1,4 +1,6 @@
+import functools
 import typing
+from collections.abc import Hashable
 from typing import Unpack
 
 from rolecraft.queue import MessageQueue
@@ -13,10 +15,9 @@ class QueueFactory:
 
     def __init__(self, config_fetcher: ConfigFetcher | None = None) -> None:
         self.config_fetcher = config_fetcher
-        self._queues: dict[str, MessageQueue] = {}
 
     @typing.overload
-    def get_or_bulid(
+    def get_or_build(
         self,
         *,
         raw_queue: MessageQueue | None = None,
@@ -24,7 +25,7 @@ class QueueFactory:
         ...
 
     @typing.overload
-    def get_or_bulid(
+    def get_or_build(
         self,
         *,
         queue_name: str | None = None,
@@ -32,39 +33,47 @@ class QueueFactory:
     ) -> MessageQueue:
         ...
 
-    def get_or_bulid(
+    def get_or_build(
         self,
         *,
         queue_name: str | None = None,
         raw_queue: MessageQueue | None = None,
         **kwds: Unpack[QueueConfigOptions],
     ) -> MessageQueue:
-        """Always return the same Queue instance if it is the same name."""
-        # Be mind that the function can called more than once if another thread makes an additional call before the initial call has been completed and cached.
+        """Build the queue then cache it. The second call will fetch from the cache if with the same parameters.
 
+        For simplification, current cache totally depends on functools.cache, where parameter changes, even the order, will affect the result.
+        """
         if raw_queue:
             if queue_name is not None or kwds:
                 raise ValueError(
                     "Extra parameters are not allowed with raw_queue"
                 )
-            queue_name = raw_queue.name
+            return self._get_or_build_raw_queue(raw_queue)
         elif queue_name is None:
             raise ValueError("queue_name or raw_queue should be specified")
 
-        if queue_name in self._queues:
-            return self._queues[queue_name]
+        if (middlewares := kwds.get("middlewares")) and not isinstance(
+            middlewares, Hashable
+        ):
+            kwds["middlewares"] = tuple(middlewares)
+        return self._get_or_build(queue_name=queue_name, **kwds)
 
-        # TODO: add thread lock
-
+    @functools.cache
+    def _get_or_build(
+        self,
+        queue_name: str,
+        **kwds: Unpack[QueueConfigOptions],
+    ) -> MessageQueue:
+        # Be mind that the function can called more than once if another thread makes an additional call before the initial call has been completed and cached.
         builder = self._get_queue_builder()
-        if raw_queue:
-            queue = builder.wrap(raw_queue)
-        else:
-            queue = builder.build_one(queue_name, **kwds)
+        return builder.build_one(queue_name, **kwds)
 
-        assert queue
-        self._queues[queue_name] = queue
-        return queue
+    @functools.cache
+    def _get_or_build_raw_queue(self, raw_queue: MessageQueue) -> MessageQueue:
+        # Be mind that the function can called more than once if another thread makes an additional call before the initial call has been completed and cached.
+        builder = self._get_queue_builder()
+        return builder.wrap(raw_queue)
 
     def build_queues(
         self,
