@@ -5,7 +5,9 @@ from rolecraft.config import ConfigStore
 
 
 class QueueDiscovery(Protocol):
-    def __call__(self) -> dict[str, Broker | None]:
+    def __call__(
+        self, config_store: ConfigStore | None = None
+    ) -> dict[str, Broker | None]:
         """Returns: mapping from queue name to the broker
 
         No need to care about QueueConfigOptions bound to the Role. That's role's QueueConfigOptions instead of queue's QueueConfigOptions.
@@ -14,11 +16,7 @@ class QueueDiscovery(Protocol):
 
 
 class DefaultQueueDiscovery(QueueDiscovery):
-    """
-    - [x] Role bound queue names
-    - [ ] Queue name from ConfigStore's specific queue configs
-    - [ ] Queue name from ConfigurableConfig queue names by broker
-    """
+    """Discover queue names and/or paired broker from the Role and ConfigStore."""
 
     def __init__(
         self,
@@ -28,12 +26,16 @@ class DefaultQueueDiscovery(QueueDiscovery):
         self.role_hanger = role_hanger
         self.config_store = config_store
 
-    def __call__(self) -> dict[str, Broker | None]:
+    def __call__(
+        self, config_store: ConfigStore | None = None
+    ) -> dict[str, Broker | None]:
         queue_names = dict[str, Broker | None]()
         for role in self.role_hanger or ():
             if role.queue_name:
                 broker = role.options.get("broker")
                 queue_names[role.queue_name] = broker
 
-        # TODO: implement ConfigStore get queue names
+        config_store = config_store or self.config_store
+        if config_store:
+            queue_names.update(config_store.queue_names_with_broker)
         return queue_names
