@@ -2,18 +2,19 @@ import logging
 from collections.abc import Callable
 from typing import Unpack
 
-from . import consumer as _consumer
+from rolecraft import consumer as _consumer
+from rolecraft import role_lib as _role
+from rolecraft import worker as _worker
+from rolecraft import worker_pool as _worker_pool
+from rolecraft.config import ConfigStore, DefaultConfigStore
+from rolecraft.consumer import ConsumerFactory
+from rolecraft.queue_factory import QueueAndNameKeys, QueueFactory
+from rolecraft.role_lib import RoleHanger
+from rolecraft.worker_pool import WorkerPool
+
 from . import queue_discovery as _queue_discovery
-from . import role_lib as _role
-from . import worker as _worker
-from . import worker_pool as _worker_pool
-from .config import ConfigStore, DefaultConfigStore
-from .consumer import ConsumerFactory
 from .queue_discovery import QueueDiscovery
-from .queue_factory import QueueAndNameKeys, QueueFactory
-from .role_lib import RoleHanger
 from .service import Service
-from .worker_pool import WorkerPool
 
 logger = logging.getLogger(__name__)
 
