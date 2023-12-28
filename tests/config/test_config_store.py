@@ -1,6 +1,7 @@
-import dataclasses
-import pytest
 from unittest import mock
+
+import pytest
+
 from rolecraft.config import config_store as config_store_mod
 
 IncompleteConfigError = config_store_mod.IncompleteConfigError
@@ -83,50 +84,80 @@ class TestEmptyStore:
         )
 
 
-class TestQueueConfigsOnlyStore:
-    @pytest.fixture()
-    def store(self, queue_configs_only_store):
-        return queue_configs_only_store
-
-    def test_fetch_queue_config_for_queue2(self, store, queue_config2):
-        assert store("queue2") is queue_config2
-
-
 class TestBrokerQueueConfigOnlyStore:
+    @pytest.fixture()
+    def store(self, broker_queue_config_only_store):
+        return broker_queue_config_only_store
+
+    def test_fetch_queue_config(
+        self, store, queue_config, queue_config2, queue_config3
+    ):
+        config = store(broker=queue_config.broker)
+        assert config.broker is queue_config.broker
+        assert config.encoder is queue_config.encoder
+        assert config == queue_config
+
+        config = store(broker=queue_config3.broker)
+        assert config.broker is queue_config3.broker
+        assert config.encoder is queue_config3.encoder
+        assert config == queue_config3
+
+        assert queue_config2.broker is queue_config.broker
+        config = store("queue2", broker=queue_config2.broker)
+        assert config.broker is queue_config.broker
+        assert config.encoder is queue_config.encoder
+        assert config == queue_config
+
+        unknown_broker = mock.MagicMock()
+        config = store(broker=unknown_broker)
+        assert config.broker is unknown_broker
+        assert config.encoder is queue_config.encoder
+        assert config.replace(broker=queue_config.broker) == queue_config
+
+
+class TestBrokerQueueConfigsOnlyStore:
     @pytest.fixture()
     def store(self, broker_queue_configs_only_store):
         return broker_queue_configs_only_store
 
-    def test_queue_to_broker(
-        self, store, broker, broker2, queue_config, queue_config4
-    ):
-        def queue_to_broker(queue_name: str):
-            if queue_name == "a_queue_with_broker2":
-                return broker2
-            return broker
-
-        store.queue_to_broker = queue_to_broker
-        assert store("any_queue_name") == queue_config
-        assert store("a_queue_with_broker2") == queue_config4
-
     def test_fetch_config_with_broker(
-        self, store, broker2, queue_config, queue_config4
+        self,
+        store,
+        broker,
+        broker2,
+        queue_config,
+        queue_config2,
+        queue_config3,
     ):
+        assert store(broker=broker) == queue_config
+        assert store(broker=broker2) == queue_config.replace(broker=broker2)
+
         assert store("any_queue_name") == queue_config
-        assert store("any_queue_name", broker=broker2) == queue_config4
+        assert store("queue2") == queue_config2
+        assert store("queue2", broker=broker2) != queue_config2
+        assert store("queue2", broker=broker2) == queue_config.replace(
+            broker=broker2
+        )
+        assert store("queue3") != queue_config3
+        assert store("queue3") == queue_config
+        assert store("queue3", broker=broker2) == queue_config3
 
 
 class TestFetchQueueConfigWithParameters:
     @pytest.fixture(
         params=[
             "default_only_store",
-            "queue_configs_only_store",
+            "broker_queue_config_only_store",
             "broker_queue_configs_only_store",
-            "hybrid_queue_configs__store",
+            "hybrid_queue_configs_store",
         ]
     )
     def store(self, request) -> DefaultConfigStore:
         return request.getfixturevalue(request.param)
+
+    @pytest.fixture()
+    def unknown_broker(self):
+        return mock.MagicMock()
 
     def test_fetch_default_config(self, store, queue_config):
         assert store() is queue_config
@@ -141,17 +172,21 @@ class TestFetchQueueConfigWithParameters:
 
         assert queue_config == config
 
-    def test_fetch_queue_config_of_the_another_broker(self, store, broker2):
-        config = store(broker=broker2)
+    def test_fetch_queue_config_of_the_another_broker(
+        self, store, unknown_broker
+    ):
+        config = store(broker=unknown_broker)
 
-        assert broker2 == config.broker
-        assert store.queue_config.replace(broker=broker2) == config
+        assert unknown_broker == config.broker
+        assert store.queue_config.replace(broker=unknown_broker) == config
 
-    def test_fetch_queue_config_with_queue_and_broker(self, store, broker2):
-        config = store("any_queue_name", broker=broker2)
+    def test_fetch_queue_config_with_queue_and_broker(
+        self, store, unknown_broker
+    ):
+        config = store("any_queue_name", broker=unknown_broker)
 
-        assert config.broker is broker2
-        assert store.queue_config.replace(broker=broker2) == config
+        assert config.broker is unknown_broker
+        assert store.queue_config.replace(broker=unknown_broker) == config
 
     def test_fetch_queue_config_with_encoder(self, store, encoder):
         config = store("any_queue_name", encoder=encoder)
@@ -188,16 +223,3 @@ class TestFetchQueueConfigWithParameters:
             store.queue_config.replace(broker=broker, middlewares=middlewares)
             == config
         )
-
-    @pytest.fixture
-    def unused_broker(self):
-        return mock.MagicMock()
-
-    def test_queue_to_unconfigured_broker(
-        self, store, unused_broker, queue_config
-    ):
-        def queue_to_broker(queue_name: str):
-            return unused_broker
-
-        store.queue_to_broker = queue_to_broker
-        assert store("any_queue_name") == queue_config

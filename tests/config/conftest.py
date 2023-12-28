@@ -20,6 +20,7 @@ def broker2():
 def encoder():
     return mock.MagicMock()
 
+
 @pytest.fixture()
 def encoder2():
     return mock.MagicMock()
@@ -65,41 +66,48 @@ def default_only_store(queue_config):
 
 
 @pytest.fixture()
-def queue_configs(queue_config2, queue_config3):
-    return {
-        "queue2": queue_config2,
-        "queue3": queue_config3,
+def broker_queue_config_only_store(queue_config, queue_config3):
+    assert queue_config3.broker is not queue_config.broker
+    broker_queue_config = {
+        queue_config.broker: queue_config,
+        queue_config3.broker: queue_config3,
     }
-
-
-@pytest.fixture()
-def queue_configs_only_store(queue_config, queue_configs):
     return DefaultConfigStore(
-        queue_config=queue_config, queue_configs=queue_configs
+        queue_config=queue_config, broker_queue_config=broker_queue_config
     )
 
 
 @pytest.fixture()
-def broker_queue_configs(queue_config4, broker2):
-    assert queue_config4.broker is broker2
-    return {
-        queue_config4.broker: queue_config4,
+def broker_queue_configs_only_store(
+    queue_config, queue_config2, queue_config3
+):
+    assert queue_config.broker is queue_config2.broker
+    broker_queue_configs = {
+        queue_config2.broker: {"queue2": queue_config2},
+        queue_config3.broker: {"queue3": queue_config3},
     }
-
-
-@pytest.fixture()
-def broker_queue_configs_only_store(queue_config, broker_queue_configs):
     return DefaultConfigStore(
         queue_config=queue_config, broker_queue_configs=broker_queue_configs
     )
 
 
 @pytest.fixture()
-def hybrid_queue_configs__store(
-    queue_config, queue_configs, broker_queue_configs
+def hybrid_queue_configs_store(
+    queue_config, queue_config2, queue_config3, queue_config4
 ):
+    assert queue_config.broker is queue_config2.broker
+    assert queue_config3.broker is not queue_config.broker
+    assert queue_config3.broker is queue_config4.broker
+    broker_queue_config = {
+        queue_config.broker: queue_config,
+        queue_config3.broker: queue_config3,
+    }
+    broker_queue_configs = {
+        queue_config2.broker: {"queue2": queue_config2},
+        queue_config3.broker: {"queue3": queue_config4},
+    }
     return DefaultConfigStore(
         queue_config=queue_config,
-        queue_configs=queue_configs,
+        broker_queue_config=broker_queue_config,
         broker_queue_configs=broker_queue_configs,
     )
