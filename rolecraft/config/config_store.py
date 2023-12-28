@@ -136,7 +136,7 @@ class DefaultConfigStore(ConfigStore, ConfigFetcher):
         config = self._get_default_queue_config(queue_name, broker=broker)
 
         if kwds:
-            config = dataclasses.replace(config, **kwds)
+            config = config.replace(**kwds)
 
         return config
 
@@ -155,8 +155,6 @@ class DefaultConfigStore(ConfigStore, ConfigFetcher):
             if not broker:
                 raise IncompleteConfigError()
 
-            return dataclasses.replace(
-                self.queue_config, broker=broker
-            ).to_queue_config()
+            return self.queue_config.replace(broker=broker).to_queue_config()
 
         return self.queue_config

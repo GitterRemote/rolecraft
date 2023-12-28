@@ -30,9 +30,7 @@ class TestEmptyStore:
 
         assert config.broker is broker
         assert (
-            dataclasses.replace(
-                store.queue_config, broker=broker
-            ).to_queue_config()
+            store.queue_config.replace(broker=broker).to_queue_config()
             == config
         )
 
@@ -41,9 +39,7 @@ class TestEmptyStore:
 
         assert config.broker is broker
         assert (
-            dataclasses.replace(
-                store.queue_config, broker=broker
-            ).to_queue_config()
+            store.queue_config.replace(broker=broker).to_queue_config()
             == config
         )
 
@@ -62,10 +58,8 @@ class TestEmptyStore:
         assert config.encoder is encoder
         assert config.broker is broker
         assert (
-            dataclasses.replace(
-                store.queue_config,
-                broker=broker,
-                encoder=encoder,
+            store.queue_config.replace(
+                broker=broker, encoder=encoder
             ).to_queue_config()
             == config
         )
@@ -82,10 +76,8 @@ class TestEmptyStore:
         assert config.middlewares is middlewares
         assert config.broker is broker
         assert (
-            dataclasses.replace(
-                store.queue_config,
-                broker=broker,
-                middlewares=middlewares,
+            store.queue_config.replace(
+                broker=broker, middlewares=middlewares
             ).to_queue_config()
             == config
         )
@@ -153,25 +145,19 @@ class TestFetchQueueConfigWithParameters:
         config = store(broker=broker2)
 
         assert broker2 == config.broker
-        assert (
-            dataclasses.replace(store.queue_config, broker=broker2) == config
-        )
+        assert store.queue_config.replace(broker=broker2) == config
 
     def test_fetch_queue_config_with_queue_and_broker(self, store, broker2):
         config = store("any_queue_name", broker=broker2)
 
         assert config.broker is broker2
-        assert (
-            dataclasses.replace(store.queue_config, broker=broker2) == config
-        )
+        assert store.queue_config.replace(broker=broker2) == config
 
     def test_fetch_queue_config_with_encoder(self, store, encoder):
         config = store("any_queue_name", encoder=encoder)
 
         assert config.encoder is encoder
-        assert (
-            dataclasses.replace(store.queue_config, encoder=encoder) == config
-        )
+        assert store.queue_config.replace(encoder=encoder) == config
 
     def test_fetch_queue_config_with_encoder_and_broker(
         self, store, broker, encoder
@@ -181,11 +167,7 @@ class TestFetchQueueConfigWithParameters:
         assert config.encoder is encoder
         assert config.broker is broker
         assert (
-            dataclasses.replace(
-                store.queue_config,
-                broker=broker,
-                encoder=encoder,
-            )
+            store.queue_config.replace(broker=broker, encoder=encoder)
             == config
         )
 
@@ -193,10 +175,7 @@ class TestFetchQueueConfigWithParameters:
         config = store("any_queue_name", middlewares=middlewares)
 
         assert config.middlewares is middlewares
-        assert (
-            dataclasses.replace(store.queue_config, middlewares=middlewares)
-            == config
-        )
+        assert store.queue_config.replace(middlewares=middlewares) == config
 
     def test_fetch_queue_config_with_middlewares_and_broker(
         self, store, broker, middlewares
@@ -206,11 +185,7 @@ class TestFetchQueueConfigWithParameters:
         assert config.middlewares is middlewares
         assert config.broker is broker
         assert (
-            dataclasses.replace(
-                store.queue_config,
-                broker=broker,
-                middlewares=middlewares,
-            )
+            store.queue_config.replace(broker=broker, middlewares=middlewares)
             == config
         )
 
