@@ -1,5 +1,6 @@
 import dataclasses
-from typing import Self, TypeVar
+import typing
+from typing import Self, TypeVar, Unpack
 
 from rolecraft import encoder as _encoder
 from rolecraft import middleware as _middleware
@@ -11,9 +12,12 @@ from rolecraft.queue_config import (
     QueueConfig,
 )
 
-PartialQueueConfigOptions = PartialQueueConfigOptions
-
 M_co = TypeVar("M_co", covariant=True)
+
+
+class IncompleteQueueConfigOptions[M](PartialQueueConfigOptions, total=False):
+    encoder: Encoder[M]
+    broker: Broker[M] | None
 
 
 @dataclasses.dataclass(kw_only=True, frozen=True)
@@ -34,3 +38,17 @@ class IncompleteQueueConfig[M_co](PartialQueueConfig):
             encoder=_encoder.HeaderBytesEncoder(),
             wait_time_seconds=10 * 60,
         )
+
+    @typing.overload
+    def replace(self, **kwds: Unpack[PartialQueueConfigOptions]) -> Self:
+        ...
+
+    @typing.overload
+    def replace[T](
+        self,
+        **kwds: Unpack[IncompleteQueueConfigOptions[T]],
+    ) -> "IncompleteQueueConfig[T]":
+        ...
+
+    def replace(self, **kwds):  # type: ignore
+        return dataclasses.replace(self, **kwds)

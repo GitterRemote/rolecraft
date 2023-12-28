@@ -1,6 +1,7 @@
 import dataclasses
+import typing
 from collections.abc import Sequence
-from typing import TypedDict, TypeVar
+from typing import Self, TypedDict, TypeVar, Unpack
 
 from rolecraft.broker import Broker
 from rolecraft.encoder import Encoder
@@ -26,8 +27,31 @@ class PartialQueueConfig:
     )
     wait_time_seconds: int | None = None
 
+    def replace(self, **kwds: Unpack[PartialQueueConfigOptions]) -> Self:
+        return dataclasses.replace(self, **kwds)
+
 
 @dataclasses.dataclass(kw_only=True, frozen=True)
 class QueueConfig[M_co](PartialQueueConfig):
     encoder: Encoder[M_co]
     broker: Broker[M_co]
+
+    @typing.overload
+    def replace(self, **kwds: Unpack[PartialQueueConfigOptions]) -> Self:
+        ...
+
+    @typing.overload
+    def replace[T](
+        self,
+        encoder: Encoder[T],
+        broker: Broker[T],
+        **kwds: Unpack[PartialQueueConfigOptions],
+    ) -> "QueueConfig[T]":
+        ...
+
+    @typing.overload
+    def replace(self, **kwds: Unpack[QueueConfigOptions[M_co]]) -> Self:
+        ...
+
+    def replace(self, **kwds):  # type: ignore
+        return dataclasses.replace(self, **kwds)

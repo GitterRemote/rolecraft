@@ -32,11 +32,9 @@ class ConfigurableBrokerConfig[M_co]:
         **kwds: Unpack[PartialQueueConfigOptions],
     ) -> typing.Self:
         if encoder:
-            config = dataclasses.replace(
-                self.queue_config, encoder=encoder, **kwds
-            )
+            config = self.queue_config.replace(encoder=encoder, **kwds)
         else:
-            config = dataclasses.replace(self.queue_config, **kwds)
+            config = self.queue_config.replace(**kwds)
         self.queue_configs[queue_name] = config
         return self
 
@@ -116,11 +114,11 @@ class ConfigurableDefaultConfig[M](InjectableConfig[QueueConfig[M]]):
         encoder: Encoder[Any] | None = None,
         **kwds: Unpack[PartialQueueConfigOptions],
     ) -> typing.Self:
-        config = dataclasses.replace(self.queue_config, **kwds)
+        config = self.queue_config.replace(**kwds)
         if broker:
-            config = dataclasses.replace(config, broker=broker)
+            config = config.replace(broker=broker)
         if encoder:
-            config = dataclasses.replace(config, broker=broker)
+            config = config.replace(encoder=encoder)
         self.queue_configs[queue_name] = config
         return self
 
@@ -148,14 +146,12 @@ class ConfigurableDefaultConfig[M](InjectableConfig[QueueConfig[M]]):
         **kwds: Unpack[PartialQueueConfigOptions],
     ) -> ConfigurableBrokerConfig[T] | ConfigurableBrokerConfig[M]:
         if encoder:
-            config = dataclasses.replace(
-                self.queue_config, broker=broker, encoder=encoder, **kwds
+            config = self.queue_config.replace(
+                broker=broker, encoder=encoder, **kwds
             )
             config = ConfigurableBrokerConfig(queue_config=config)
         elif self._assert(broker):
-            config = dataclasses.replace(
-                self.queue_config, broker=broker, **kwds
-            )
+            config = self.queue_config.replace(broker=broker, **kwds)
             config = ConfigurableBrokerConfig(queue_config=config)
         else:
             raise TypeError("Unmatched broker type with encoder")
@@ -188,8 +184,8 @@ class ConfigurableConfig(
     ):
         """Once update default, you should discard current config instance and use new returned config for later configuration"""
         if encoder:
-            config = dataclasses.replace(
-                self.queue_config, broker=broker, encoder=encoder, **kwds
+            config = self.queue_config.replace(
+                broker=broker, encoder=encoder, **kwds
             ).to_queue_config()
             return ConfigurableDefaultConfig(
                 queue_config=config,
@@ -197,8 +193,8 @@ class ConfigurableConfig(
                 broker_configs=self.broker_configs,
             )
         elif self._assert(broker):
-            config = dataclasses.replace(
-                self.queue_config, broker=broker, **kwds
+            config = self.queue_config.replace(
+                broker=broker, **kwds
             ).to_queue_config()
             return ConfigurableDefaultConfig(
                 queue_config=config,
@@ -220,12 +216,9 @@ class ConfigurableConfig(
         encoder: Encoder[M],
         **kwds: Unpack[PartialQueueConfigOptions],
     ) -> ConfigurableBrokerConfig[M]:
-        config = typing.cast(
-            QueueConfig[M],
-            dataclasses.replace(
-                self.queue_config, broker=broker, encoder=encoder, **kwds
-            ),
-        )
+        config = self.queue_config.replace(
+            broker=broker, encoder=encoder, **kwds
+        ).to_queue_config()
         broker_config = ConfigurableBrokerConfig(queue_config=config)
         self.broker_configs[broker] = broker_config
         return broker_config
@@ -238,12 +231,12 @@ class ConfigurableConfig(
         **kwds: Unpack[PartialQueueConfigOptions],
     ) -> typing.Self:
         if encoder:
-            config = dataclasses.replace(
-                self.queue_config, broker=broker, encoder=encoder, **kwds
+            config = self.queue_config.replace(
+                broker=broker, encoder=encoder, **kwds
             ).to_queue_config()
         else:
-            config = dataclasses.replace(
-                self.queue_config, broker=broker, **kwds
+            config = self.queue_config.replace(
+                broker=broker, **kwds
             ).to_queue_config()
         self.queue_configs[queue_name] = config
         return self

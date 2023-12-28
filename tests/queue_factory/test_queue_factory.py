@@ -1,10 +1,11 @@
-import pytest
 from unittest import mock
-from rolecraft.queue_factory import queue_factory as queue_factory_mod
-from rolecraft.queue_factory import queue_builder as queue_builder_mod
-from rolecraft import queue_config as queue_config_mod
-import dataclasses
+
+import pytest
+
 from rolecraft import middleware as middleware_mod
+from rolecraft import queue_config as queue_config_mod
+from rolecraft.queue_factory import queue_builder as queue_builder_mod
+from rolecraft.queue_factory import queue_factory as queue_factory_mod
 
 
 @pytest.fixture()
@@ -35,7 +36,7 @@ def queue_config(broker, encoder):
 @pytest.fixture()
 def config_fetcher(queue_config):
     def fetch(queue_name=None, **kwargs):
-        return dataclasses.replace(queue_config, **kwargs)
+        return queue_config.replace(**kwargs)
 
     return fetch
 
