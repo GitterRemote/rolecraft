@@ -1,7 +1,7 @@
 import abc
 import dataclasses
 from collections import defaultdict
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from typing import Any, ClassVar, Self, Unpack
 
 from rolecraft.broker import Broker
@@ -21,16 +21,16 @@ class ConfigStore(abc.ABC):
     """It stores all default QueueConfig for the initialization of the MessageQueue object. Besides, it stores queue-specific or broker-specific QueueConfig."""
 
     QueueConfigType = QueueConfig[Any] | IncompleteQueueConfig[Any]
-    QueueConfigsType = dict[str, QueueConfig[Any]]
-    BrokerQueueConfigsType = dict[Broker[Any], QueueConfig[Any]]
+    QueueConfigsType = Mapping[str, QueueConfig[Any]]
+    BrokerQueueConfigsType = Mapping[Broker[Any], QueueConfig[Any]]
     QueueToBrokerType = Callable[[str], Broker[Any] | None]
-    QueueNamesByBrokerType = dict[Broker[Any], list[str]]
+    QueueNamesByBrokerType = Mapping[Broker[Any], list[str]]
 
     @abc.abstractmethod
     def __init__(
         self,
         queue_config: QueueConfigType | None = None,
-        queue_configs: dict[str, QueueConfig[Any]] | None = None,
+        queue_configs: QueueConfigsType | None = None,
         broker_queue_configs: BrokerQueueConfigsType | None = None,
         queue_to_broker: QueueToBrokerType | None = None,
         queue_names_by_broker: QueueNamesByBrokerType | None = None,
