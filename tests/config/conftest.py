@@ -110,4 +110,8 @@ def hybrid_queue_configs_store(
         queue_config=queue_config,
         broker_queue_config=broker_queue_config,
         broker_queue_configs=broker_queue_configs,
+        queue_names_by_broker={
+            queue_config2.broker: ["queue2"],
+            queue_config3.broker: ["queue3", "queue3-2"],
+        }
     )

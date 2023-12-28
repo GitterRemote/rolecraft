@@ -142,6 +142,28 @@ class TestBrokerQueueConfigsOnlyStore:
         assert store("queue3") == queue_config
         assert store("queue3", broker=broker2) == queue_config3
 
+    def test_parsed_queue_names_by_broker(
+        self, store, queue_config2, queue_config3
+    ):
+        assert store.parsed_queue_names_by_broker == {
+            queue_config2.broker: ["queue2"],
+            queue_config3.broker: ["queue3"],
+        }
+
+
+class TestHybridQueueConfigs:
+    @pytest.fixture()
+    def store(self, hybrid_queue_configs_store):
+        return hybrid_queue_configs_store
+
+    def test_parsed_queue_names_by_broker(
+        self, store, queue_config2, queue_config3
+    ):
+        assert store.parsed_queue_names_by_broker == {
+            queue_config2.broker: ["queue2"],
+            queue_config3.broker: ["queue3", "queue3-2"],
+        }
+
 
 class TestFetchQueueConfigWithParameters:
     @pytest.fixture(
