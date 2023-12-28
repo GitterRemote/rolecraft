@@ -11,6 +11,8 @@ M = Middleware
 
 @dataclasses.dataclass(init=False, eq=True, order=False, repr=False)
 class MiddlewareList(MutableSequence[M]):
+    """A utility for configuring middlewares. If need to inherit this class to add new middlewares as attibutes, you have to add the decorator `@dataclasses.dataclass(init=False)` to the child class and overwrite the `field_name_for` method."""
+
     _middlewares: list[M]
     retryable: Retryable | None = None
 
@@ -23,14 +25,14 @@ class MiddlewareList(MutableSequence[M]):
             self._set_middleware(middleware)
 
     def _set_middleware(self, middleware: M):
-        field_name = self._field_name_for(middleware)
+        field_name = self.field_name_for(middleware)
         self._set_field(field_name, middleware)
 
     def _remove_middleware(self, middleware: M):
-        field_name = self._field_name_for(middleware)
+        field_name = self.field_name_for(middleware)
         self._set_field(field_name, None)
 
-    def _field_name_for(self, middleware: M) -> str:
+    def field_name_for(self, middleware: M) -> str:
         if isinstance(middleware, Retryable):
             return "retryable"
         raise TypeError(f"Unknonw middleware type: {middleware}")
@@ -61,22 +63,22 @@ class MiddlewareList(MutableSequence[M]):
             if value is None:
                 self._remove_middleware_by_name(name)
                 return
-            elif self._field_name_for(value) != name:
+            elif self.field_name_for(value) != name:
                 raise TypeError(f"Middleware type error for {name}: {value}")
 
         super().__setattr__(name, value)
 
     # -- MutableSequence implmenetation --
     def insert(self, index: int, value: M) -> None:
-        field_name = self._field_name_for(value)
+        field_name = self.field_name_for(value)
         if getattr(self, field_name):
             raise ValueError(f"Middleware {field_name} exists")
         self._set_field(field_name, value)
         return self._middlewares.insert(index, value)
 
     def __setitem__(self, index: int, value: M) -> None:
-        old_field_name = self._field_name_for(self._middlewares[index])
-        field_name = self._field_name_for(value)
+        old_field_name = self.field_name_for(self._middlewares[index])
+        field_name = self.field_name_for(value)
         if old_field_name != field_name:
             if getattr(self, field_name):
                 raise ValueError(f"Middleware {field_name} exists")

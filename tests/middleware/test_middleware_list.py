@@ -26,10 +26,10 @@ class MiddlewareList(middleware.MiddlewareList):
     middleware2: mock.MagicMock | None = None
     middleware3: mock.MagicMock | None = None
 
-    def _field_name_for(self, middleware) -> str:
+    def field_name_for(self, middleware) -> str:
         if getattr(middleware, "_name", None) in (2, 3):
             return "middleware" + str(middleware._name)
-        return super()._field_name_for(middleware)
+        return super().field_name_for(middleware)
 
 
 @pytest.fixture()
