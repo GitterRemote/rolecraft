@@ -2,7 +2,7 @@ import abc
 import dataclasses
 from collections import defaultdict
 from collections.abc import Callable
-from typing import Any, Self, Unpack
+from typing import Any, ClassVar, Self, Unpack
 
 from rolecraft.broker import Broker
 from rolecraft.queue_factory.config_fetcher import (
@@ -67,7 +67,7 @@ class DefaultConfigStore(ConfigStore, ConfigFetcher):
         dataclasses.field(default_factory=dict)
     )
 
-    _default: ConfigStore | None = None
+    _default: ClassVar[ConfigStore | None] = None
 
     @classmethod
     def set(cls, store: Self):
