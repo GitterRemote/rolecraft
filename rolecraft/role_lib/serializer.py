@@ -46,11 +46,23 @@ class StrParamsSerializer(ParamsSerializer[str, tuple, dict]):
         )
 
     def _restore_kwds(self, sig: inspect.Signature, kwds: dict) -> dict:
-        return {
-            k: self._restore(sig.parameters[k], v)
-            for k, v in kwds.items()
-            if k in sig.parameters
-        }
+        params = list(sig.parameters.values())
+        has_var_kwds = (
+            params and params[-1].kind == inspect.Parameter.VAR_KEYWORD
+        )
+        if has_var_kwds:
+            return {
+                k: self._restore(sig.parameters[k], v)
+                if k in sig.parameters
+                else v
+                for k, v in kwds.items()
+            }
+        else:
+            return {
+                k: self._restore(sig.parameters[k], v)
+                for k, v in kwds.items()
+                if k in sig.parameters
+            }
 
     def deserialize(self, fn: Callable, data: str) -> tuple[tuple, dict]:
         data_dict = json.loads(data)
