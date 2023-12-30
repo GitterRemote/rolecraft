@@ -79,7 +79,7 @@ class BytesParamsSerializer(ParamsSerializer[bytes, tuple, dict]):
     ...
 
 
-class DefaultParamsSerializer(ParamsSerializer[SerializedData, tuple, dict]):
+class HybridParamsDeserializer(ParamsSerializer[SerializedData, tuple, dict]):
     def __init__(
         self,
         str_serializer: StrParamsSerializer,
@@ -88,10 +88,15 @@ class DefaultParamsSerializer(ParamsSerializer[SerializedData, tuple, dict]):
         self.str_serializer = str_serializer
         self.bytes_serializer = bytes_serializer
 
-    def serialize(
-        self, fn: Callable, args: tuple, kwds: dict
-    ) -> SerializedData:
-        return super().serialize(fn, args, kwds)
+    def deserialize(
+        self, fn: Callable, data: SerializedData
+    ) -> tuple[tuple, dict]:
+        if not data:
+            return (), {}
+        elif self.str_serializer.support(data):
+            return self.str_serializer.deserialize(fn, data)
+        else:
+            raise NotImplementedError
 
     def support(self, data) -> TypeGuard[SerializedData]:
         return (
@@ -103,4 +108,6 @@ class DefaultParamsSerializer(ParamsSerializer[SerializedData, tuple, dict]):
 
 str_serializer = StrParamsSerializer()
 bytes_serializer = BytesParamsSerializer()
-default_serializer = DefaultParamsSerializer(str_serializer, bytes_serializer)
+hybrid_deserializer = HybridParamsDeserializer(
+    str_serializer, bytes_serializer
+)

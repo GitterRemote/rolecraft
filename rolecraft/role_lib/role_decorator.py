@@ -1,3 +1,5 @@
+import functools
+import typing
 from collections.abc import Callable
 from typing import Unpack
 
@@ -11,7 +13,7 @@ from .role_hanger import RoleHanger
 from .serializer import ParamsSerializerType, SerializedData
 
 
-class RoleDecorator[**P, R, D: SerializedData]:
+class RoleDecorator[D: SerializedData]:
     def __init__(
         self,
         *,
@@ -24,18 +26,55 @@ class RoleDecorator[**P, R, D: SerializedData]:
         **options: Unpack[RoleDefaultOptions],
     ) -> None:
         self.serializer = serializer
-        self.deserializer = deserializer or _serializer.default_serializer
+        self.deserializer = deserializer or _serializer.hybrid_deserializer
 
         config_store = config_store or DefaultConfigStore.get()
         self.queue_factory = queue_factory or QueueFactory(
             config_fetcher=config_store.fetcher
         )
-        self.role_hanger = role_hanger or _role_hanger.default_role_hanger
+        self.role_hanger = (
+            role_hanger
+            if role_hanger is not None
+            else _role_hanger.default_role_hanger
+        )
 
         self.queue_name = queue_name
         self.options = options
 
-    def __call__(
+    @typing.overload
+    def __call__[**P, R](self, fn: Callable[P, R], /) -> Role[P, R, str]:
+        ...
+
+    @typing.overload
+    def __call__[**P, R](
+        self,
+        name: str | None = None,
+        *,
+        deserializer: ParamsSerializerType[SerializedData] | None = None,
+        queue_name: str | None = None,
+        **options: Unpack[RoleDefaultOptions],
+    ) -> Callable[[Callable[P, R]], Role[P, R, str]]:
+        ...
+
+    @typing.overload
+    def __call__[**P, R](
+        self,
+        name: str | None = None,
+        *,
+        serializer: ParamsSerializerType[D],
+        deserializer: ParamsSerializerType[SerializedData] | None = None,
+        queue_name: str | None = None,
+        **options: Unpack[RoleDefaultOptions],
+    ) -> Callable[[Callable[P, R]], Role[P, R, D]]:
+        ...
+
+    def __call__(self, name=None, **kwds):  # type: ignore
+        if callable(name):
+            return self._wrap(fn=name)
+
+        return functools.partial(self._wrap, name=name, **kwds)
+
+    def _wrap[**P, R](
         self,
         fn: Callable[P, R],
         name: str | None = None,
