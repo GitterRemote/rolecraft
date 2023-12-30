@@ -1,8 +1,9 @@
-import pytest
 from unittest import mock
-from rolecraft.role_lib import role_decorator as role_decorator_mod
-from rolecraft.role_lib import role as role_mod
+
+import pytest
+
 from rolecraft import message as message_mod
+from rolecraft.role_lib import role as role_mod
 
 
 @pytest.fixture()
@@ -13,7 +14,7 @@ def queue():
 @pytest.fixture()
 def queue_factory(queue):
     factory = mock.MagicMock()
-    factory.get_or_build.side_effect = [queue]
+    factory.get_or_build.return_value = queue
     return factory
 
 
@@ -63,3 +64,41 @@ def test_craft(role, serializer, fn, queue):
     msg = message_mod.Message(role_data=data, role_name=role.name, queue=queue)
     assert role.craft(msg) is rv
     fn.assert_called_once_with(1, "b", c=["c"])
+
+
+def test_dispatch_message(role):
+    with mock.patch.object(role, "dispatch_message_ext") as mocked_method:
+        role.dispatch_message(1, "b", c=["c"])
+        mocked_method.assert_called_once_with((1, "b"), dict(c=["c"]))
+
+
+def test_dispatch_message_ext(role, queue, queue_factory):
+    args = (1, "b")
+    kwds = dict(c=["c"])
+    queue.enqueue.return_value = True
+    assert not queue.enqueue.side_effect
+
+    msg = role.dispatch_message_ext(args, kwds)
+    assert msg
+    assert msg.queue is queue
+    queue.enqueue.assert_called_once_with(msg)
+    queue_factory.get_or_build.assert_called_once_with(queue_name="default")
+
+
+def test_dispatch_message_ext_with_options(role, queue):
+    args = (1, "b")
+    kwds = dict(c=["c"])
+    queue.enqueue.return_value = True
+
+    options = {"delay_millis": 1999}
+    msg = role.dispatch_message_ext(args, kwds, **options)
+    queue.enqueue.assert_called_once_with(msg, **options)
+
+
+def test_dispatch_message_ext_failed(role, queue):
+    args = (1, "b")
+    kwds = dict(c=["c"])
+    queue.enqueue.return_value = False
+
+    with pytest.raises(RuntimeError):
+        role.dispatch_message_ext(args, kwds)

@@ -70,8 +70,8 @@ class Role[**P, R, D: SerializedData]:
 
     def dispatch_message_ext(
         self,
-        args,
-        kwds,
+        args: tuple,
+        kwds: dict,
         *,
         queue_name: str | None = None,
         raw_queue: MessageQueue | None = None,
