@@ -7,18 +7,6 @@ from rolecraft.role_lib import role as role_mod
 
 
 @pytest.fixture()
-def queue():
-    return mock.MagicMock()
-
-
-@pytest.fixture()
-def queue_factory(queue):
-    factory = mock.MagicMock()
-    factory.get_or_build.return_value = queue
-    return factory
-
-
-@pytest.fixture()
 def fn():
     mocked = mock.MagicMock()
     mocked.__name__ = "mocked_fn_name"

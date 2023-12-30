@@ -1,6 +1,8 @@
 import dataclasses
 from typing import Any
 
+import pytest
+
 
 def test_serialize(str_serializer):
     def fn(a: int, b: str, *, c: float = 1.0):
@@ -13,6 +15,18 @@ def test_serialize(str_serializer):
     assert args == (1, 2)
     assert kwds == dict(c=3.0)
     assert isinstance(kwds["c"], float)
+
+
+def test_serialize_empty_params(str_serializer):
+    def fn():
+        pass
+
+    data = str_serializer.serialize(fn, (), {})
+    assert isinstance(data, str)
+
+    args, kwds = str_serializer.deserialize(fn=fn, data=data)
+    assert args == ()
+    assert kwds == {}
 
 
 def test_serialize_with_dataclass_support(str_serializer):
@@ -94,3 +108,32 @@ def test_serialize_with_unmatched_functions(str_serializer):
     assert args == (1, 2)
     assert kwds == dict(c=3.0)
     assert isinstance(kwds["c"], float)
+
+
+class TestHybridDeserializer:
+    @pytest.fixture()
+    def deserializer(self, hybrid_deserializer):
+        return hybrid_deserializer
+
+    def test_deserialize_str(self, deserializer, str_serializer):
+        def fn(a: int, b: str, *, c: float = 1.0):
+            pass
+
+        data = str_serializer.serialize(fn, args=(1, 2), kwds=dict(c=3.0))
+        assert isinstance(data, str)
+
+        args, kwds = deserializer.deserialize(fn=fn, data=data)
+        assert args == (1, 2)
+        assert kwds == dict(c=3.0)
+        assert isinstance(kwds["c"], float)
+
+    def test_serialize_empty_params(self, deserializer, str_serializer):
+        def fn():
+            pass
+
+        data = str_serializer.serialize(fn, (), {})
+        assert isinstance(data, str)
+
+        args, kwds = str_serializer.deserialize(fn=fn, data=data)
+        assert args == ()
+        assert kwds == {}
