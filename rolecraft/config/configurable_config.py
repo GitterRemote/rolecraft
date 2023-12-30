@@ -1,8 +1,6 @@
 import dataclasses
-import functools
 import typing
-from collections import defaultdict
-from typing import Any, TypeVar, Unpack
+from typing import Any, Self, TypeVar, Unpack
 
 from rolecraft.broker import Broker, HeaderBytesRawMessage
 from rolecraft.encoder import Encoder
@@ -24,7 +22,7 @@ class PartialQueueConfigOptions2[M](PartialQueueConfigOptions, total=False):
 
 @dataclasses.dataclass
 class ConfigurableBrokerConfig[M_co]:
-    queue_config: QueueConfig[M_co]
+    queue_config: QueueConfig[M_co] | None = None
     queue_configs: dict[str, QueueConfig[M_co]] = dataclasses.field(
         default_factory=dict
     )
@@ -34,23 +32,29 @@ class ConfigurableBrokerConfig[M_co]:
         queue_name: str,
         **kwds: Unpack[PartialQueueConfigOptions2[M_co]],
     ) -> typing.Self:
+        if not self.queue_config:
+            raise RuntimeError("No defualt QueueConfig for the broker")
         config = self.queue_config.replace(**kwds)
         self.queue_configs[queue_name] = config
         return self
+
+    def insert_queue_config(
+        self, queue_name: str, queue_config: QueueConfig[M_co]
+    ) -> typing.Self:
+        if self.queue_config:
+            assert queue_config.broker is self.queue_config.broker
+        self.queue_configs[queue_name] = queue_config
+        return self
+
+    @classmethod
+    def new(cls, broker: Broker[M_co]) -> Self:
+        """auxiliary method for typing"""
+        return cls()
 
 
 @dataclasses.dataclass(kw_only=True)
 class InjectableConfig[Q: QueueConfig[Any] | IncompleteQueueConfig[Any]]:
     queue_config: Q
-
-    # Include queue specific QueueConfigs that are based on default QueueConfig even the broker is not the default broker.
-    queue_configs: dict[
-        Broker[Any], dict[str, QueueConfig[Any]]
-    ] = dataclasses.field(
-        default_factory=functools.partial(
-            defaultdict[Broker[Any], dict[str, QueueConfig[Any]]], dict
-        )
-    )
 
     broker_configs: dict[
         Broker[Any], ConfigurableBrokerConfig[Any]
@@ -72,21 +76,14 @@ class InjectableConfig[Q: QueueConfig[Any] | IncompleteQueueConfig[Any]]:
         broker_queue_config = {
             broker: broker_config.queue_config
             for broker, broker_config in self.broker_configs.items()
+            if broker_config.queue_config
         }
-        if not isinstance(self.queue_config, IncompleteQueueConfig):
-            broker_queue_config[self.queue_config.broker] = self.queue_config
 
         broker_queue_configs = {
             broker: broker_config.queue_configs
             for broker, broker_config in self.broker_configs.items()
+            if broker_config.queue_configs
         }
-
-        for broker, queue_configs in self.queue_configs.items():
-            existing_queue_configs = broker_queue_configs.get(broker)
-            if existing_queue_configs:
-                existing_queue_configs.update(queue_configs)
-            else:
-                broker_queue_configs[broker] = queue_configs
 
         return self.config_store_cls(
             queue_config=self.queue_config,
@@ -99,6 +96,29 @@ class InjectableConfig[Q: QueueConfig[Any] | IncompleteQueueConfig[Any]]:
 @dataclasses.dataclass
 class ConfigurableDefaultConfig[M](InjectableConfig[QueueConfig[M]]):
     queue_config: QueueConfig[M]
+
+    @typing.overload
+    def _get_broker_config(
+        self, broker: None = None
+    ) -> ConfigurableBrokerConfig[M]:
+        ...
+
+    @typing.overload
+    def _get_broker_config[T](
+        self, broker: Broker[T]
+    ) -> ConfigurableBrokerConfig[T]:
+        ...
+
+    def _get_broker_config(
+        self, broker: Broker[Any] | None = None
+    ) -> ConfigurableBrokerConfig[Any]:
+        """Get or create the BrokerConfig"""
+        broker = broker or self.queue_config.broker
+        if broker_config := self.broker_configs.get(broker):
+            return broker_config
+        broker_config = ConfigurableBrokerConfig.new(broker)
+        self.broker_configs[broker] = broker_config
+        return broker_config
 
     @typing.overload
     def add_queue_config(
@@ -141,8 +161,7 @@ class ConfigurableDefaultConfig[M](InjectableConfig[QueueConfig[M]]):
             config = self.queue_config.replace(**kwds)
         else:
             config = self.queue_config.replace(broker=broker, **kwds)
-
-        self.queue_configs[config.broker][queue_name] = config
+        self._get_broker_config(broker).insert_queue_config(queue_name, config)
         return self
 
     @typing.overload
@@ -157,6 +176,7 @@ class ConfigurableDefaultConfig[M](InjectableConfig[QueueConfig[M]]):
     def add_broker_config[T](
         self,
         broker: Broker[T],
+        *,
         encoder: Encoder[T],
         **kwds: Unpack[PartialQueueConfigOptions],
     ) -> ConfigurableBrokerConfig[T]:
@@ -165,30 +185,14 @@ class ConfigurableDefaultConfig[M](InjectableConfig[QueueConfig[M]]):
     def add_broker_config[T](
         self,
         broker: Broker[T],
-        encoder: Encoder[T] | None = None,
-        **kwds: Unpack[PartialQueueConfigOptions],
-    ) -> ConfigurableBrokerConfig[T] | ConfigurableBrokerConfig[M]:
+        **kwds: Unpack[PartialQueueConfigOptions2[T]],
+    ) -> ConfigurableBrokerConfig[T]:
         """Add default QueueConfig for a broker, based on current default QueueConfig"""
-        if encoder:
-            config = self.queue_config.replace(
-                broker=broker, encoder=encoder, **kwds
-            )
-            broker_config = ConfigurableBrokerConfig(queue_config=config)
-        elif self._assert(broker):
-            config = self.queue_config.replace(broker=broker, **kwds)
-            broker_config = ConfigurableBrokerConfig(queue_config=config)
-        else:
-            raise TypeError("Unmatched broker type with encoder")
-
-        if broker in self.broker_configs:
-            raise ValueError("Broker default QueueConfig exists")
-
-        self.broker_configs[broker] = broker_config
+        broker_config = self._get_broker_config(broker)
+        assert not broker_config.queue_config
+        config = self.queue_config.replace(broker=broker, **kwds)
+        broker_config.queue_config = config
         return broker_config
-
-    def _assert(self, broker: Broker[Any]) -> typing.TypeGuard[Broker[M]]:
-        # TODO: implement it
-        return True
 
 
 @dataclasses.dataclass
@@ -198,6 +202,15 @@ class ConfigurableConfig(
     queue_config: IncompleteQueueConfig[
         HeaderBytesRawMessage
     ] = IncompleteQueueConfig.default()
+
+    def _get_broker_config[T](
+        self, broker: Broker[T]
+    ) -> ConfigurableBrokerConfig[T]:
+        if broker_config := self.broker_configs.get(broker):
+            return broker_config
+        broker_config = ConfigurableBrokerConfig.new(broker)
+        self.broker_configs[broker] = broker_config
+        return broker_config
 
     def update_default[T](
         self,
@@ -215,7 +228,6 @@ class ConfigurableConfig(
 
         return ConfigurableDefaultConfig(
             queue_config=config,
-            queue_configs=self.queue_configs,
             broker_configs=self.broker_configs,
         )
 
@@ -225,14 +237,13 @@ class ConfigurableConfig(
         encoder: Encoder[T],
         **kwds: Unpack[PartialQueueConfigOptions],
     ) -> ConfigurableBrokerConfig[T]:
-        if broker in self.broker_configs:
-            raise ValueError("Broker default QueueConfig exists")
+        broker_config = self._get_broker_config(broker)
+        assert not broker_config.queue_config
 
         config = self.queue_config.replace(
             broker=broker, encoder=encoder, **kwds
         ).to_queue_config()
-        broker_config = ConfigurableBrokerConfig(queue_config=config)
-        self.broker_configs[broker] = broker_config
+        broker_config.queue_config = config
         return broker_config
 
     def add_queue_config[T](
@@ -241,19 +252,10 @@ class ConfigurableConfig(
         broker: Broker[T],
         **kwds: Unpack[PartialQueueConfigOptions2[T]],
     ) -> typing.Self:
-        # if not kwds.get("encoder") and not self._assert(broker):
-        #     raise TypeError(
-        #         "If no encoder, the broker should be compatible with HeaderBytesRawMessage type"
-        #     )
+        broker_config = self._get_broker_config(broker)
         config = self.queue_config.replace(
             broker=broker, **kwds
         ).to_queue_config()
 
-        self.queue_configs[broker][queue_name] = config
+        broker_config.insert_queue_config(queue_name, config)
         return self
-
-    def _assert(
-        self, broker: Broker[Any]
-    ) -> typing.TypeGuard[Broker[HeaderBytesRawMessage]]:
-        # TODO: implement it
-        return True

@@ -122,8 +122,6 @@ class DefaultConfigStore(ConfigStore, ConfigFetcher):
         queue_name: str | None,
         broker: Broker[Any] | None,
     ) -> QueueConfig[Any]:
-        broker = broker or self.queue_config.broker
-
         if broker:
             if queue_name is not None and (
                 config := self.broker_queue_configs.get(broker, {}).get(
@@ -132,6 +130,11 @@ class DefaultConfigStore(ConfigStore, ConfigFetcher):
             ):
                 return config
             if config := self.broker_queue_config.get(broker):
+                return config
+        elif queue_name is not None and self.queue_config.broker:
+            if config := self.broker_queue_configs.get(
+                self.queue_config.broker, {}
+            ).get(queue_name):
                 return config
 
         if isinstance(self.queue_config, IncompleteQueueConfig):
