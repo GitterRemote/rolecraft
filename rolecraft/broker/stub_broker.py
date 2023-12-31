@@ -3,7 +3,8 @@ import dataclasses
 import threading
 from collections import deque
 
-from rolecraft.broker import Broker, HeaderBytesRawMessage, ReceiveFuture
+from .broker import Broker, ReceiveFuture
+from .raw_message import HeaderBytesRawMessage
 
 
 @dataclasses.dataclass
