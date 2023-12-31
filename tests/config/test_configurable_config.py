@@ -142,17 +142,17 @@ class TestIncompleteConfig:
             queue_config=incomplete_queue_config
         )
 
-    def test_update_default(self, configurable_config, broker):
-        config = configurable_config.update_default(broker=broker)
+    def test_set_default(self, configurable_config, broker):
+        config = configurable_config.set_default(broker=broker)
         assert config.queue_config.broker is broker
 
-    def test_update_default_keep_original_data(
+    def test_set_default_keep_original_data(
         self, configurable_config, broker, broker2, encoder2
     ):
         configurable_config.add_queue_config(
             "queue1", broker=broker2, encoder=encoder2
         )
-        config = configurable_config.update_default(broker=broker)
+        config = configurable_config.set_default(broker=broker)
         assert config.queue_config.broker is broker
 
         store = config.create_config_store()
