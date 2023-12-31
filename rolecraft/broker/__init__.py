@@ -1,5 +1,6 @@
 from .broker import Broker, EnqueueOptions, ReceiveFuture
 from .raw_message import BytesRawMessage, HeaderBytesRawMessage
+from .stub_broker import StubBroker
 
 __all__ = [
     "Broker",
@@ -7,4 +8,5 @@ __all__ = [
     "EnqueueOptions",
     "BytesRawMessage",
     "HeaderBytesRawMessage",
+    "StubBroker",
 ]
