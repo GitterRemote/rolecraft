@@ -89,25 +89,25 @@ class MessageQueue[RawMessage](abc.ABC):
     @copy_msg_method_signature(Broker[Message].ack)
     def ack(self, message: Message, *args, **kwargs):
         return self.broker.ack(
-            self.encoder.encode(message), *args, queue_name=self.name, **kwargs
+            self.encoder.encode(message), self.name, *args, **kwargs
         )
 
     @copy_msg_method_signature(Broker[Message].nack)
     def nack(self, message: Message, *args, **kwargs):
         return self.broker.nack(
-            self.encoder.encode(message), *args, queue_name=self.name, **kwargs
+            self.encoder.encode(message), self.name, *args, **kwargs
         )
 
     @copy_msg_method_signature(Broker[Message].requeue)
     def requeue(self, message: Message, *args, **kwargs):
         return self.broker.requeue(
-            self.encoder.encode(message), *args, queue_name=self.name, **kwargs
+            self.encoder.encode(message), self.name, *args, **kwargs
         )
 
     @copy_msg_method_signature(Broker[Message].retry)
     def retry(self, message: Message, *args, **kwargs):
         return self.broker.retry(
-            self.encoder.encode(message), *args, queue_name=self.name, **kwargs
+            self.encoder.encode(message), self.name, *args, **kwargs
         )
 
     def close(self):
