@@ -1,6 +1,7 @@
 import collections
 import dataclasses
 import threading
+import uuid
 from collections import deque
 
 from .broker import Broker, ReceiveFuture
@@ -40,7 +41,9 @@ class _Queue:
     def __len__(self) -> int:
         return len(self._msg_queue) + len(self._processing_msgs)
 
-    def enqueue(self, msg: HeaderBytesRawMessage, **options) -> bool:
+    def enqueue(self, msg: HeaderBytesRawMessage, **options) -> str:
+        if not msg.id:
+            msg.id = uuid.uuid4().hex
         self._msg_queue.append(msg)
 
         # The following code can be in an async job
@@ -48,7 +51,7 @@ class _Queue:
             if self._waiting_queue:
                 self._waiting_queue[0].event.set()
 
-        return True
+        return msg.id
 
     def _receive_directly(self, num: int) -> list[HeaderBytesRawMessage]:
         msgs = list[HeaderBytesRawMessage]()
@@ -138,6 +141,9 @@ class _ReceiveFuture(ReceiveFuture[HeaderBytesRawMessage]):
             raise RuntimeError("The receive haven't started")
         return self.proxy.cancel()
 
+    def __hash__(self) -> int:
+        return id(self)
+
 
 class StubBroker(Broker[HeaderBytesRawMessage]):
     def __init__(self) -> None:
@@ -152,8 +158,7 @@ class StubBroker(Broker[HeaderBytesRawMessage]):
         if "priority" in options or "delay_millis" in options:
             raise NotImplementedError
         queue = self._queues[queue_name]
-        queue.enqueue(message, **options)
-        return message.id
+        return queue.enqueue(message, **options)
 
     def block_receive(
         self,
@@ -203,5 +208,5 @@ class StubBroker(Broker[HeaderBytesRawMessage]):
             # TODO: copy a message
             retries = int(message.headers.get("retries") or 0)
             message.headers["retries"] = retries + 1
-            return queue.enqueue(message, delay_millis=delay_millis)
+            return bool(queue.enqueue(message, delay_millis=delay_millis))
         return False
