@@ -25,7 +25,7 @@ class RoleHanger(collections.UserDict[str, "Role"]):
         return self.get(role_name)
 
     def __iter__(self) -> Iterator[Role]:
-        return iter(self.values())
+        return iter(self.data.values())
 
 
 default_role_hanger = RoleHanger()
