@@ -23,13 +23,19 @@ class Service:
         self.worker = worker
         self.worker_pool = worker_pool
 
-    def start(self, *, thread_num: int | None = None):
+    def start(
+        self,
+        *,
+        thread_num: int | None = None,
+        ignore_signal: bool = False,
+    ):
         if isinstance(self.worker_pool, ThreadWorkerPool):
             self.worker_pool.thread_num = thread_num or 1
         elif thread_num:
             raise NotImplementedError("Unsupported worker pool")
 
-        self._register_signal()
+        if not ignore_signal:
+            self._register_signal()
 
         self.consumer.start()
         self.worker.start()
