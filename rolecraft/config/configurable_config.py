@@ -212,7 +212,7 @@ class ConfigurableConfig(
         self.broker_configs[broker] = broker_config
         return broker_config
 
-    def update_default[T](
+    def set_default[T](
         self,
         *,
         broker: Broker[T],
