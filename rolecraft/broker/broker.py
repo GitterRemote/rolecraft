@@ -19,6 +19,10 @@ class ReceiveFuture[Message](abc.ABC):
     def cancel(self):
         raise NotImplementedError
 
+    @abstractmethod
+    def __hash__(self) -> int:
+        raise NotImplementedError
+
 
 class Broker[Message](abc.ABC):
     @abstractmethod
