@@ -58,8 +58,9 @@ class MessageQueue[RawMessage](abc.ABC):
         self.wait_time_seconds = wait_time_seconds
 
     @copy_method_signature(Broker[Message].enqueue)
-    def enqueue(self, *args, **kwargs):
-        return self.broker.enqueue(self.name, *args, **kwargs)
+    def enqueue(self, message: Message, *args, **kwargs):
+        raw_message = self.encoder.encode(message)
+        return self.broker.enqueue(self.name, raw_message, *args, **kwargs)
 
     @copy_method_signature(Broker[Message].block_receive)
     def block_receive(self, *args, **kwargs):
@@ -72,8 +73,9 @@ class MessageQueue[RawMessage](abc.ABC):
     def _wrap_future(
         self, future: ReceiveFuture[RawMessage]
     ) -> ReceiveFuture[Message]:
+        result_fn = future.result
         future.result = lambda: [  # type: ignore
-            self.encoder.decode(m) for m in future.result()
+            self.encoder.decode(m, queue=self) for m in result_fn()
         ]
         return typing.cast(ReceiveFuture[Message], future)
 
