@@ -19,10 +19,18 @@ def config(broker):
     rolecraft.Config().set_default(broker=broker).inject()
 
 
-@pytest.fixture
-def create_service():
+@pytest.fixture(autouse=True)
+def clear_role_hanger():
+    yield
+    rolecraft.default_role_hanger.clear()
+
+
+@pytest.fixture(params=[1, 2, 3], ids=["1 worker", "2 workers", "3 workers"])
+def create_service(request):
+    thread_num = request.param
+
     @contextlib.contextmanager
-    def _create_service(thread_num: int = 1):
+    def _create_service(thread_num: int = thread_num):
         service = rolecraft.ServiceFactory().create(prefetch_size=1)
         t = threading.Thread(
             target=service.start,
@@ -40,7 +48,6 @@ def create_service():
 def test_dispatch_messages(create_service):
     rv = []
 
-    # 1, 3, 6, 10
     @role
     def fn(first: int, *, second: int):
         rv.append(first + second)
