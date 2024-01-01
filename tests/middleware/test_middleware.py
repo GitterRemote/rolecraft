@@ -15,11 +15,6 @@ def queue():
 
 
 @pytest.fixture()
-def queue2():
-    return mock.MagicMock(queue_mod.MessageQueue)
-
-
-@pytest.fixture()
 def middleware():
     class M(middleware_mod.Middleware):
         def __init__(
