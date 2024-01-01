@@ -8,7 +8,7 @@ from rolecraft.role_lib import role_hanger as role_hanger_mod
 
 @pytest.fixture()
 def role_hanger():
-    return role_hanger_mod.RoleHanger()
+    return role_hanger_mod.SimpleRoleHanger()
 
 
 @pytest.fixture()
