@@ -6,6 +6,7 @@ from rolecraft.broker import Broker, HeaderBytesRawMessage
 from rolecraft.encoder import Encoder
 
 from . import config_store as _config_store
+from . import global_default as _global_default
 from .config_store import ConfigStore
 from .queue_config import (
     IncompleteQueueConfig,
@@ -66,11 +67,11 @@ class InjectableConfig[Q: QueueConfig[Any] | IncompleteQueueConfig[Any]]:
 
     @property
     def config_store_cls(self) -> type[ConfigStore]:
-        return _config_store.DefaultConfigStore
+        return _config_store.SimpleConfigStore
 
     def inject(self):
         """Inject into the global config store."""
-        self.create_config_store().set_as_defaut()
+        _global_default.global_default.set(self.create_config_store())
 
     def create_config_store(self) -> ConfigStore:
         broker_queue_config = {

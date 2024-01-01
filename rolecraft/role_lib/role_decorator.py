@@ -3,7 +3,8 @@ import typing
 from collections.abc import Callable
 from typing import Unpack
 
-from rolecraft.config import ConfigStore, DefaultConfigStore
+from rolecraft import config as _config
+from rolecraft.config import ConfigStore
 from rolecraft.queue_factory import QueueFactory
 
 from . import role_hanger as _role_hanger
@@ -28,10 +29,11 @@ class RoleDecorator[D: SerializedData]:
         self.serializer = serializer
         self.deserializer = deserializer or _serializer.hybrid_deserializer
 
-        config_store = config_store or DefaultConfigStore.get()
+        config_store = config_store or _config.global_config.get_or_future()
         self.queue_factory = queue_factory or QueueFactory(
             config_fetcher=config_store.fetcher
         )
+
         self.role_hanger = (
             role_hanger
             if role_hanger is not None
