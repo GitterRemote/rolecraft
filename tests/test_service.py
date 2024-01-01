@@ -23,7 +23,7 @@ def config(broker):
 def create_service():
     @contextlib.contextmanager
     def _create_service(thread_num: int = 1):
-        service = rolecraft.ServiceFactory().create()
+        service = rolecraft.ServiceFactory().create(prefetch_size=1)
         t = threading.Thread(
             target=service.start,
             kwargs=dict(thread_num=thread_num, ignore_signal=True),

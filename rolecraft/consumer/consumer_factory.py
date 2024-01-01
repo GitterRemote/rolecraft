@@ -1,12 +1,19 @@
 from collections.abc import Sequence
-from typing import Protocol
+from typing import Protocol, TypedDict
+
 from rolecraft.queue import MessageQueue
+
 from . import threaded_consumer as _threaded_consumer
 from .consumer import Consumer
 
 
 class NoPrefetch:
     pass
+
+
+class ConsumerOptions(TypedDict, total=False):
+    no_prefetch: NoPrefetch
+    prefetch_size: int
 
 
 class ConsumerFactory(Protocol):

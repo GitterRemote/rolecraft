@@ -5,6 +5,7 @@ from typing import TypedDict, Unpack
 from rolecraft.message import Message
 from rolecraft.queue import EnqueueOptions, MessageQueue
 from rolecraft.queue_factory import QueueConfigOptions, QueueFactory
+from rolecraft.utils import typed_dict as _typed_dict
 
 from .serializer import ParamsSerializerType, SerializedData
 
@@ -84,7 +85,9 @@ class Role[**P, R, D: SerializedData]:
         if raw_queue:
             queue = self.queue_factory.get_or_build(raw_queue=raw_queue)
         else:
-            queue_configs = self._subset_dict(options, QueueConfigOptions)
+            queue_configs = _typed_dict.subset_dict(
+                options, QueueConfigOptions
+            )
             queue = self.queue_factory.get_or_build(
                 queue_name=queue_name or self.queue_name or "default",
                 **queue_configs,
@@ -96,16 +99,6 @@ class Role[**P, R, D: SerializedData]:
                 f"Dispatch message error: enqueue error for {message}"
             )
         return message
-
-    def _subset_dict[T: TypedDict](self, parent: T, child_type: type[T]) -> T:
-        return typing.cast(
-            T,
-            {
-                key_name: parent.pop(key_name)  # type: ignore
-                for key_name in child_type.__annotations__.keys()
-                if key_name in parent
-            },
-        )
 
     def _build_message(
         self, queue: MessageQueue, *args: P.args, **kwds: P.kwargs
