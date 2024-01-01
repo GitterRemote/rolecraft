@@ -89,6 +89,11 @@ def test_slice(three_middlewares_list):
     assert isinstance(middlewares, MiddlewareList)
 
 
+def test_empty(empty_middleware_list, middleware_list):
+    assert not empty_middleware_list
+    assert middleware_list
+
+
 class TestAdd:
     @pytest.fixture(params=["iadd", "add", "radd"])
     def middlewares_list(self, request, two_middlewares_list, retryable):
