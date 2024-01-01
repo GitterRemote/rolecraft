@@ -57,7 +57,9 @@ class QueueFactory:
             middlewares, Hashable
         ):
             kwds["middlewares"] = tuple(middlewares)
-        return self._get_or_build(queue_name=queue_name, **kwds)
+        queue = self._get_or_build(queue_name=queue_name, **kwds)
+        assert queue.name == queue_name
+        return queue
 
     @functools.cache
     def _get_or_build(

@@ -83,8 +83,13 @@ def test_get_and_build_with_middlewares(queue_factory, broker2, encoder2):
 
 
 def test_get_and_build_cache(queue_factory, broker2, encoder2):
+    def build_one(queue_name, *args, **kwargs):
+        q = mock.MagicMock()
+        q.name = queue_name
+        return q
+
     with mock.patch.object(
-        queue_builder_mod.QueueBuilder, "build_one"
+        queue_builder_mod.QueueBuilder, "build_one", side_effect=build_one
     ) as build_method:
         queue = queue_factory.get_or_build(
             queue_name="queue1",
@@ -100,14 +105,14 @@ def test_get_and_build_cache(queue_factory, broker2, encoder2):
             encoder=encoder2,
             middlewares=[middleware_mod.Retryable()],
         )
-        assert queue2 is queue
+        assert queue2 is not queue
         # As that Retryable doesn't implement __eq__, so the build_method will be call again
         assert middleware_mod.Retryable() != middleware_mod.Retryable()
         assert build_method.call_count == 2
 
     retryable = middleware_mod.Retryable()
     with mock.patch.object(
-        queue_builder_mod.QueueBuilder, "build_one"
+        queue_builder_mod.QueueBuilder, "build_one", side_effect=build_one
     ) as build_method:
         queue = queue_factory.get_or_build(
             queue_name="queue1",
