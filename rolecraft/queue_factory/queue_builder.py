@@ -1,9 +1,10 @@
 from typing import TypedDict, Unpack
 
+from rolecraft import middleware as _middleware
 from rolecraft.broker import Broker
 from rolecraft.queue import MessageQueue
 
-from .config_fetcher import QueueConfigOptions, ConfigFetcher, QueueConfig
+from .config_fetcher import ConfigFetcher, QueueConfig, QueueConfigOptions
 
 
 class QueueAndNameKeys(TypedDict, total=False):
@@ -63,6 +64,10 @@ class QueueBuilder:
         for middleware in config.middlewares:
             queue = middleware(queue)
             assert isinstance(queue, MessageQueue)
+
+        if config.middlewares:
+            assert isinstance(queue, _middleware.Middleware)
+            queue.is_outmost = True
         return queue
 
     def _new_queue[M](
