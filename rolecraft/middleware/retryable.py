@@ -11,16 +11,17 @@ from .middleware import Middleware
 class RetryableOptions(TypedDict, total=False):
     max_retries: int
     base_backoff_millis: int
-    max_backoff_millis: int | None
+    max_backoff_millis: int
     exponential_factor: float  # Exponential factor for backoff calculation
     jitter_range: float  # Random jitter range as a percentage of the base backoff time
 
     should_retry: Callable[[Message, Exception, int], bool] | None
-    raises: Sequence[type[Exception]]
+    raises: Sequence[type[Exception]] | type[Exception]
 
 
 class Retryable(Middleware):
     _BASE_BACKOFF_MILLIS = 5 * 60 * 1000
+    _MAX_BACKOFF_MILLIS = 366 * 24 * 60 * 60 * 1000
 
     def __init__(
         self,
@@ -31,12 +32,15 @@ class Retryable(Middleware):
         self.base_backoff_millis = options.get(
             "base_backoff_millis", self._BASE_BACKOFF_MILLIS
         )
-        self.max_backoff_millis = options.get("max_backoff_millis")
+        self.max_backoff_millis = options.get(
+            "max_backoff_millis", self._MAX_BACKOFF_MILLIS
+        )
         self.exponential_factor = options.get("exponential_factor", 2)
         self.jitter_range = options.get("jitter_range", 0.2)
 
         self.should_retry = options.get("should_retry")
-        self.raises = tuple(options.get("raises") or ())
+        raises = options.get("raises") or ()
+        self.raises = tuple(raises) if isinstance(raises, Sequence) else raises
 
         super().__init__(queue)
 
@@ -75,20 +79,15 @@ class Retryable(Middleware):
             message, delay_millis=delay_millis, exception=exception
         )
 
-    def _compute_delay_millis(self, retry_attempt: int):
+    def _compute_delay_millis(self, retry_attempt: int) -> float:
         if retry_attempt == 0:
-            return self.base_backoff_millis
+            return min(self.base_backoff_millis, self.max_backoff_millis)
 
         backoff_time: float = self.base_backoff_millis * (
             self.exponential_factor**retry_attempt
         )
-        if (
-            self.max_backoff_millis is not None
-            and backoff_time > self.max_backoff_millis
-        ):
-            backoff_time = self.max_backoff_millis
 
         jitter = random.uniform(-self.jitter_range, self.jitter_range)
         backoff_time += self.base_backoff_millis * jitter
 
-        return backoff_time
+        return min(backoff_time, self.max_backoff_millis)
