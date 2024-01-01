@@ -75,6 +75,11 @@ class QueueFactory:
         builder = self._get_queue_builder()
         return builder.wrap(raw_queue)
 
+    def clear(self):
+        """Clear all cached queue. It is useful in UT"""
+        self._get_or_build.cache_clear()
+        self._get_or_build_raw_queue.cache_clear()
+
     def build_queues(
         self,
         *,
