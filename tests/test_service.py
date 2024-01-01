@@ -22,7 +22,9 @@ def broker2():
 
 @pytest.fixture(autouse=True)
 def config(broker):
-    rolecraft.Config().set_default(broker=broker).inject()
+    config = rolecraft.Config().set_default(broker=broker)
+    config.inject()
+    return config
 
 
 @pytest.fixture(autouse=True)
@@ -157,3 +159,43 @@ def test_dispatch_messages_with_role_bound_broker(create_service, broker2):
         time.sleep(0.1)
     assert len(rv) == 200
     assert set(map(lambda x: x * 2, range(100))) == set(rv)
+
+
+def test_dispatch_messages_fail_retry(config, create_service):
+    config.queue_config.middlewares.retryable.max_backoff_millis = 0
+    config.inject()
+
+    rv = []
+
+    @role
+    def fn(first: int, *, second: int):
+        rv.append(False)
+        raise RuntimeError("fn fails")
+
+    with create_service():
+        fn.dispatch_message(0, second=1)
+        time.sleep(0.1)
+    assert len(rv) == 4
+    assert rv == [False] * 4
+
+
+def test_dispatch_messages_hard_fail(config, create_service):
+    class HardFailureError(Exception):
+        ...
+
+    config.queue_config.middlewares.retryable.max_backoff_millis = 0
+    config.queue_config.middlewares.retryable.raises = HardFailureError
+    config.inject()
+
+    rv = []
+
+    @role
+    def fn(first: int, *, second: int):
+        rv.append(False)
+        raise HardFailureError
+
+    with create_service():
+        fn.dispatch_message(0, second=1)
+        time.sleep(0.1)
+    assert len(rv) == 1
+    assert rv == [False]
