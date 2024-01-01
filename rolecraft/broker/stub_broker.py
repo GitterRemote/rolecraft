@@ -126,23 +126,16 @@ class _Queue:
 
 @dataclasses.dataclass
 class _ReceiveFuture(ReceiveFuture[HeaderBytesRawMessage]):
-    queue: _Queue
-    wait_time_seconds: float | None = None
-    num: int = 1
-    proxy: _QueueWaitProxy | None = None
+    _proxy: _QueueWaitProxy
 
     def result(self) -> list[HeaderBytesRawMessage]:
-        proxy = self.queue.receive(self.num, self.wait_time_seconds)
-        self.proxy = proxy
-        return proxy.result()
+        return self._proxy.result()
 
     def cancel(self):
-        if not self.proxy:
-            raise RuntimeError("The receive haven't started")
-        return self.proxy.cancel()
+        self._proxy.cancel()
 
     def __hash__(self) -> int:
-        return id(self)
+        return id(self._proxy)
 
 
 class StubBroker(Broker[HeaderBytesRawMessage]):
@@ -169,7 +162,8 @@ class StubBroker(Broker[HeaderBytesRawMessage]):
         meta_keys: list[str] | None = None,
     ) -> ReceiveFuture[HeaderBytesRawMessage]:
         queue = self._queues[queue_name]
-        return _ReceiveFuture(queue, wait_time_seconds, max_number)
+        proxy = queue.receive(max_number, wait_time_seconds)
+        return _ReceiveFuture(proxy)
 
     def qsize(self, queue_name: str) -> int:
         return len(self._queues[queue_name])
