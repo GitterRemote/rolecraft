@@ -1,6 +1,7 @@
 import contextlib
 import threading
 import time
+from typing import Unpack
 
 import pytest
 
@@ -11,6 +12,11 @@ from rolecraft import role
 
 @pytest.fixture
 def broker():
+    return broker_mod.StubBroker()
+
+
+@pytest.fixture
+def broker2():
     return broker_mod.StubBroker()
 
 
@@ -30,17 +36,25 @@ def clear_role_decorator():
 
 
 @pytest.fixture(params=[1, 2, 3], ids=["1 worker", "2 workers", "3 workers"])
-def create_service(request):
-    thread_num = request.param
+def thread_num(request):
+    return request.param
 
+
+@pytest.fixture(
+    params=[1, 10, 1000], ids=["prefetch 1", "prefetch 10", "prefetch 1000"]
+)
+def prefetch_size(request):
+    return request.param
+
+
+@pytest.fixture()
+def create_service(thread_num, prefetch_size):
     @contextlib.contextmanager
     def _create_service(
-        thread_num: int = thread_num, queue_names: list[str] | None = None
+        thread_num: int = thread_num,
+        **service_opions: Unpack[rolecraft.ServiceCreateOptions],
     ):
-        service_opions = {}
-        service_opions["prefetch_size"] = 1
-        if queue_names:
-            service_opions["queue_names"] = queue_names
+        service_opions["prefetch_size"] = prefetch_size
 
         service = rolecraft.ServiceFactory().create(**service_opions)
 
@@ -57,7 +71,7 @@ def create_service(request):
     return _create_service
 
 
-def test_dispatch_messages(create_service, broker):
+def test_dispatch_messages(create_service):
     rv = []
 
     @role
@@ -80,7 +94,7 @@ def test_dispatch_messages(create_service, broker):
     assert rv[-1] == 99 * 2
 
 
-def test_dispatch_messages_with_multiple_queues(create_service, broker):
+def test_dispatch_messages_with_multiple_queues(create_service):
     rv = []
     rv2 = []
 
@@ -103,7 +117,7 @@ def test_dispatch_messages_with_multiple_queues(create_service, broker):
     assert set(map(lambda x: x**2, range(100))) == set(rv2)
 
 
-def test_dispatch_messages_with_defined_queue_name(create_service, broker):
+def test_dispatch_messages_with_defined_queue_name(create_service):
     rv = []
 
     @role
@@ -121,4 +135,26 @@ def test_dispatch_messages_with_defined_queue_name(create_service, broker):
         time.sleep(0.1)
 
     assert len(rv) == 100
+    assert set(map(lambda x: x * 2, range(100))) == set(rv)
+
+
+def test_dispatch_messages_with_role_bound_broker(create_service, broker2):
+    rv = []
+
+    @role(broker=broker2)
+    def fn(first: int, *, second: int):
+        rv.append(first + second)
+
+    with create_service():
+        for i in range(100):
+            fn.dispatch_message(i, second=i)
+        time.sleep(0.1)
+
+    assert not rv
+
+    with create_service(queue_names_by_broker={broker2: ["default"]}):
+        for i in range(100):
+            fn.dispatch_message(i, second=i)
+        time.sleep(0.1)
+    assert len(rv) == 200
     assert set(map(lambda x: x * 2, range(100))) == set(rv)
