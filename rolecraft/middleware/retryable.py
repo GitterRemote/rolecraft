@@ -12,9 +12,10 @@ class RetryableOptions(TypedDict, total=False):
     max_retries: int
     base_backoff_millis: int
     max_backoff_millis: int | None
-    exponential_factor: int  # Exponential factor for backoff calculation
-    jitter_range: int  # Random jitter range as a percentage of the base backoff time
-    should_retry: Callable[[Message, Exception, int], bool]
+    exponential_factor: float  # Exponential factor for backoff calculation
+    jitter_range: float  # Random jitter range as a percentage of the base backoff time
+
+    should_retry: Callable[[Message, Exception, int], bool] | None
     raises: Sequence[type[Exception]]
 
 
@@ -33,10 +34,23 @@ class Retryable(Middleware):
         self.max_backoff_millis = options.get("max_backoff_millis")
         self.exponential_factor = options.get("exponential_factor", 2)
         self.jitter_range = options.get("jitter_range", 0.2)
+
+        self.should_retry = options.get("should_retry")
         self.raises = tuple(options.get("raises") or ())
-        self.options = options
 
         super().__init__(queue)
+
+    @property
+    def options(self):
+        return RetryableOptions(
+            max_retries=self.max_retries,
+            base_backoff_millis=self.base_backoff_millis,
+            max_backoff_millis=self.max_backoff_millis,
+            exponential_factor=self.exponential_factor,
+            jitter_range=self.jitter_range,
+            should_retry=self.should_retry,
+            raises=self.raises,
+        )
 
     def _should_retry(
         self, message: Message, exception: Exception, retry_attempt: int
@@ -44,7 +58,7 @@ class Retryable(Middleware):
         if self.raises and isinstance(exception, self.raises):
             return False
 
-        if should_retry := self.options.get("should_retry"):
+        if should_retry := self.should_retry:
             return should_retry(message, exception, retry_attempt)
 
         return retry_attempt < self.max_retries
