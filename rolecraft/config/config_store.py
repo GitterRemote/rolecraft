@@ -2,7 +2,7 @@ import abc
 import dataclasses
 from collections import defaultdict
 from collections.abc import Mapping
-from typing import Any, ClassVar, Self, Unpack
+from typing import Any, Unpack
 
 from rolecraft.broker import Broker
 from rolecraft.queue_factory.config_fetcher import (
@@ -37,10 +37,6 @@ class ConfigStore(abc.ABC):
     ) -> None:
         raise NotImplementedError
 
-    @abc.abstractmethod
-    def set_as_defaut(self) -> None:
-        raise NotImplementedError
-
     @property
     @abc.abstractmethod
     def fetcher(self) -> ConfigFetcher:
@@ -54,7 +50,7 @@ class ConfigStore(abc.ABC):
 
 
 @dataclasses.dataclass(kw_only=True)
-class DefaultConfigStore(ConfigStore, ConfigFetcher):
+class SimpleConfigStore(ConfigStore, ConfigFetcher):
     queue_config: ConfigStore.QueueConfigType
     broker_queue_config: ConfigStore.BrokerQueueConfigType = dataclasses.field(
         default_factory=dict
@@ -66,22 +62,6 @@ class DefaultConfigStore(ConfigStore, ConfigFetcher):
     queue_names_by_broker: ConfigStore.QueueNamesByBrokerType = (
         dataclasses.field(default_factory=dict)
     )
-
-    _default: ClassVar[ConfigStore | None] = None
-
-    @classmethod
-    def set(cls, store: Self):
-        """set the store to the global variable as a default store"""
-        cls._default = store
-
-    @classmethod
-    def get(cls) -> ConfigStore:
-        if not cls._default:
-            cls._default = cls(queue_config=IncompleteQueueConfig.default())
-        return cls._default
-
-    def set_as_defaut(self):
-        self.set(self)
 
     @property
     def parsed_queue_names_by_broker(

@@ -6,17 +6,13 @@ from rolecraft.config import config_store as config_store_mod
 
 IncompleteConfigError = config_store_mod.IncompleteConfigError
 
-DefaultConfigStore = config_store_mod.DefaultConfigStore
+DefaultConfigStore = config_store_mod.SimpleConfigStore
 
 
 class TestEmptyStore:
     @pytest.fixture()
     def store(self, incomplete_queue_config):
         return DefaultConfigStore(queue_config=incomplete_queue_config)
-
-    def test_set_default(self, store):
-        store.set_as_defaut()
-        assert DefaultConfigStore.get() is store
 
     def test_fetch_default_config(self, store):
         with pytest.raises(IncompleteConfigError):

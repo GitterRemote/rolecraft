@@ -2,11 +2,12 @@ import logging
 from collections.abc import Callable
 from typing import Unpack
 
+from rolecraft import config as _config
 from rolecraft import consumer as _consumer
 from rolecraft import role_lib as _role
 from rolecraft import worker as _worker
 from rolecraft import worker_pool as _worker_pool
-from rolecraft.config import ConfigStore, DefaultConfigStore
+from rolecraft.config import ConfigStore
 from rolecraft.consumer import ConsumerFactory, ConsumerOptions
 from rolecraft.queue_factory import QueueAndNameKeys, QueueFactory
 from rolecraft.role_lib import RoleHanger
@@ -35,7 +36,7 @@ class ServiceFactory:
         role_hanger: RoleHanger | None = None,
     ) -> None:
         self.queue_factory = queue_factory or QueueFactory(
-            config_fetcher=DefaultConfigStore.get().fetcher
+            config_fetcher=_config.global_config.get_or_future().fetcher
         )
         self.consumer_factory = (
             consumer_factory or _consumer.DefaultConsumerFactory()
@@ -65,9 +66,7 @@ class ServiceFactory:
         consumer_options = _typed_dict.subset_dict(options, ConsumerOptions)
 
         if not queue_options:
-            queue_options = self.queue_discovery(
-                config_store=config_store
-            )
+            queue_options = self.queue_discovery(config_store=config_store)
 
         queues = self.queue_factory.build_queues(
             config_fetcher=config_store.fetcher if config_store else None,

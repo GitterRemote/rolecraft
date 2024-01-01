@@ -3,7 +3,7 @@ from unittest import mock
 from rolecraft.config import queue_config as queue_config_mod
 from rolecraft.config import config_store as config_store_mod
 
-DefaultConfigStore = config_store_mod.DefaultConfigStore
+DefaultConfigStore = config_store_mod.SimpleConfigStore
 
 
 @pytest.fixture()
@@ -113,5 +113,5 @@ def hybrid_queue_configs_store(
         queue_names_by_broker={
             queue_config2.broker: ["queue2"],
             queue_config3.broker: ["queue3", "queue3-2"],
-        }
+        },
     )

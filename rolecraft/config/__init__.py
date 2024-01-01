@@ -1,8 +1,10 @@
-from .config_store import ConfigStore, DefaultConfigStore
+from .config_store import ConfigStore, SimpleConfigStore
 from .configurable_config import ConfigurableConfig
+from .global_default import global_default as global_config
 
 __all__ = [
     "ConfigStore",
-    "DefaultConfigStore",
+    "SimpleConfigStore",
     "ConfigurableConfig",
+    "global_config",
 ]
