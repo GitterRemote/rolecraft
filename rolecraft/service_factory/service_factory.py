@@ -7,9 +7,10 @@ from rolecraft import role_lib as _role
 from rolecraft import worker as _worker
 from rolecraft import worker_pool as _worker_pool
 from rolecraft.config import ConfigStore, DefaultConfigStore
-from rolecraft.consumer import ConsumerFactory
+from rolecraft.consumer import ConsumerFactory, ConsumerOptions
 from rolecraft.queue_factory import QueueAndNameKeys, QueueFactory
 from rolecraft.role_lib import RoleHanger
+from rolecraft.utils import typed_dict as _typed_dict
 from rolecraft.worker_pool import WorkerPool
 
 from . import queue_discovery as _queue_discovery
@@ -17,6 +18,10 @@ from .queue_discovery import QueueDiscovery
 from .service import Service
 
 logger = logging.getLogger(__name__)
+
+
+class ServiceCreateOptions(QueueAndNameKeys, ConsumerOptions, total=False):
+    ...
 
 
 class ServiceFactory:
@@ -50,20 +55,25 @@ class ServiceFactory:
         self,
         *,
         config_store: ConfigStore | None = None,
-        **kwds: Unpack[QueueAndNameKeys],
+        **options: Unpack[ServiceCreateOptions],
     ) -> Service:
         """Create the service with a customized configuration and defined queue names.
 
         The consumer will use the queue names and paired brokers to fetch messages."""
 
-        if not kwds:
-            kwds = self.queue_discovery(config_store=config_store)
+        queue_options = _typed_dict.subset_dict(options, QueueAndNameKeys)
+        consumer_options = _typed_dict.subset_dict(options, ConsumerOptions)
+
+        if not queue_options:
+            queue_options = self.queue_discovery(
+                config_store=config_store
+            )
 
         queues = self.queue_factory.build_queues(
             config_fetcher=config_store.fetcher if config_store else None,
-            **kwds,
+            **queue_options,
         )
-        consumer = self.consumer_factory(queues=queues)
+        consumer = self.consumer_factory(queues=queues, **consumer_options)
         worker_pool = self.worker_pool_factory()
         worker = _worker.Worker(
             worker_pool=worker_pool,
