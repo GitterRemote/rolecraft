@@ -1,3 +1,3 @@
-from .service_factory import ServiceFactory
+from .service_factory import ServiceCreateOptions, ServiceFactory
 
-__all__ = ["ServiceFactory"]
+__all__ = ["ServiceFactory", "ServiceCreateOptions"]
