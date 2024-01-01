@@ -1,4 +1,5 @@
 import random
+from collections.abc import Callable, Sequence
 from typing import TypedDict, Unpack
 
 from rolecraft.message import Message
@@ -13,43 +14,54 @@ class RetryableOptions(TypedDict, total=False):
     max_backoff_millis: int | None
     exponential_factor: int  # Exponential factor for backoff calculation
     jitter_range: int  # Random jitter range as a percentage of the base backoff time
+    should_retry: Callable[[Message, Exception, int], bool]
+    raises: Sequence[type[Exception]]
 
 
 class Retryable(Middleware):
-    BASE_BACKOFF_MILLIS = 5 * 60 * 1000
+    _BASE_BACKOFF_MILLIS = 5 * 60 * 1000
 
     def __init__(
         self,
         queue: MessageQueue | None = None,
         **options: Unpack[RetryableOptions],
     ) -> None:
-        # TODO: retry when
-        # TODO: Retryable exceptions
         self.max_retries = options.get("max_retries", 3)
         self.base_backoff_millis = options.get(
-            "base_backoff_millis", self.BASE_BACKOFF_MILLIS
+            "base_backoff_millis", self._BASE_BACKOFF_MILLIS
         )
         self.max_backoff_millis = options.get("max_backoff_millis")
         self.exponential_factor = options.get("exponential_factor", 2)
         self.jitter_range = options.get("jitter_range", 0.2)
+        self.raises = tuple(options.get("raises") or ())
         self.options = options
 
         super().__init__(queue)
 
+    def _should_retry(
+        self, message: Message, exception: Exception, retry_attempt: int
+    ) -> bool:
+        if self.raises and isinstance(exception, self.raises):
+            return False
+
+        if should_retry := self.options.get("should_retry"):
+            return should_retry(message, exception, retry_attempt)
+
+        return retry_attempt < self.max_retries
+
     def nack(self, message: Message, exception: Exception, **kwargs):
         assert self.queue, "Middleware Retryable is not initialized"
-        retries = message.meta.retries
-        if retries and retries >= self.max_retries:
+        retries = message.meta.retries or 0
+
+        if not self._should_retry(message, exception, retries):
             return self.queue.nack(message, exception=exception, **kwargs)
+
         delay_millis = int(self._compute_delay_millis(retries))
         return self.queue.retry(
             message, delay_millis=delay_millis, exception=exception
         )
 
     def _compute_delay_millis(self, retry_attempt: int):
-        if retry_attempt == 0:
-            return self.base_backoff_millis
-
         if retry_attempt == 0:
             return self.base_backoff_millis
 
