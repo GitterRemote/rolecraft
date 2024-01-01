@@ -14,7 +14,7 @@ def role():
 
 @pytest.fixture
 def role_hanger():
-    return role_hanger_mod.RoleHanger()
+    return role_hanger_mod.SimpleRoleHanger()
 
 
 def test_put(role_hanger, role):
@@ -24,7 +24,7 @@ def test_put(role_hanger, role):
 
 def test_iter(role_hanger, role):
     assert list(role_hanger) == []
-    
+
     role_hanger.put(role)
     assert next(iter(role_hanger)) is role
     assert list(role_hanger) == [role]
