@@ -133,10 +133,6 @@ class ThreadedConsumer(ConsumerBase):
     @contextlib.contextmanager
     def _hook_stop_event(self, future):
         """hook the fs.cancel() with consumer's stop event."""
-        if self._stopped:
-            yield False
-            return
-
         self._result_future_sets.add(future)
-        yield True
+        yield not self._stopped
         self._result_future_sets.remove(future)
