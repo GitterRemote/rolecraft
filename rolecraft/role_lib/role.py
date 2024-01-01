@@ -1,6 +1,5 @@
-import typing
 from collections.abc import Callable
-from typing import TypedDict, Unpack
+from typing import Unpack
 
 from rolecraft.message import Message
 from rolecraft.queue import EnqueueOptions, MessageQueue
