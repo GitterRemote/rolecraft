@@ -90,8 +90,7 @@ def test_dispatch_messages(create_service):
             fn.dispatch_message(i, second=i)
         time.sleep(0.1)
     assert len(rv) == 100
-    assert rv[0] == 0
-    assert rv[-1] == 99 * 2
+    assert set(map(lambda x: x * 2, range(100))) == set(rv)
 
 
 def test_dispatch_messages_with_multiple_queues(create_service):
