@@ -9,6 +9,16 @@ from rolecraft.utils import typed_dict as _typed_dict
 from .serializer import ParamsSerializerType, SerializedData
 
 
+class CraftError(Exception):
+    def __init__(self, message: Message, *args: object) -> None:
+        self.message = message
+        super().__init__(*args)
+
+
+class UnmatchedQueueNameError(CraftError):
+    ...
+
+
 class RoleDefaultOptions(QueueConfigOptions, EnqueueOptions, total=False):
     ...
 
@@ -51,6 +61,8 @@ class Role[**P, R, D: SerializedData]:
         return self.fn(*args, **kwds)
 
     def craft(self, message: Message) -> R:
+        if self.queue_name and message.queue.name != self.queue_name:
+            raise UnmatchedQueueNameError(message)
         return self._craft(message.role_data)
 
     def _craft(self, data: SerializedData | D) -> R:
