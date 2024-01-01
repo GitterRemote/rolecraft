@@ -87,9 +87,10 @@ class Role[**P, R, D: SerializedData]:
             queue_configs = _typed_dict.subset_dict(
                 options, QueueConfigOptions
             )
+            if queue_name is None:
+                queue_name = self.queue_name or "default"
             queue = self.queue_factory.get_or_build(
-                queue_name=queue_name or self.queue_name or "default",
-                **queue_configs,
+                queue_name=queue_name, **queue_configs
             )
 
         message = self._build_message(queue, *args, **kwds)

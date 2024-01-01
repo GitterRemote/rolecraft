@@ -59,7 +59,6 @@ class QueueBuilder:
     def _wrap(
         self, raw_queue: MessageQueue, config: QueueConfig
     ) -> MessageQueue:
-        assert config.middlewares is not None
         queue = raw_queue
         for middleware in config.middlewares:
             queue = middleware(queue)
