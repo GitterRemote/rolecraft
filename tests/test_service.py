@@ -20,9 +20,13 @@ def config(broker):
 
 
 @pytest.fixture(autouse=True)
-def clear_role_hanger():
+def clear_role_decorator():
     yield
-    rolecraft.default_role_hanger.clear()
+
+    # TODO: add clear method to role decorator
+    role.role_hanger.clear()
+    # If the queue factory doesn't clear its cached queue, then the broker will be different from the service' broker, which is a brand new broker object.
+    role.queue_factory.clear()
 
 
 @pytest.fixture(params=[1, 2, 3], ids=["1 worker", "2 workers", "3 workers"])
@@ -45,7 +49,7 @@ def create_service(request):
     return _create_service
 
 
-def test_dispatch_messages(create_service):
+def test_dispatch_messages(create_service, broker):
     rv = []
 
     @role
@@ -66,3 +70,27 @@ def test_dispatch_messages(create_service):
     assert len(rv) == 100
     assert rv[0] == 0
     assert rv[-1] == 99 * 2
+
+
+def test_dispatch_messages_with_multiple_queues(create_service, broker):
+    rv = []
+    rv2 = []
+
+    @role(queue_name="queue1")
+    def fn(first: int, *, second: int):
+        rv.append(first + second)
+
+    @role(queue_name="queue2")
+    def fn2(first: int, *, second: int):
+        rv2.append(first * second)
+
+    with create_service():
+        for i in range(100):
+            fn.dispatch_message(i, second=i)
+            fn2.dispatch_message(i, second=i)
+            ...
+        time.sleep(0.1)
+    assert len(rv) == 100
+    assert set(map(lambda x: x * 2, range(100))) == set(rv)
+    assert len(rv2) == 100
+    assert set(map(lambda x: x**2, range(100))) == set(rv2)
