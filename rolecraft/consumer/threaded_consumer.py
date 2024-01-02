@@ -111,7 +111,7 @@ class ThreadedConsumer(ConsumerBase):
                 thread = threading.Thread(
                     target=self._consume,
                     args=(queue,),
-                    name=f"{self.__class__.__name__}-{queue.name}",
+                    name=f"{self.__class__.__name__}_queue_{queue.name}",
                 )
                 self._consumer_threads.append(thread)
                 thread.start()
@@ -129,6 +129,8 @@ class ThreadedConsumer(ConsumerBase):
                     future.cancel()
                 for msg in future.result():
                     local_queue.put(msg)
+
+        logger.info(f"Consumer {threading.current_thread().name} stopped.")
 
     @contextlib.contextmanager
     def _hook_stop_event(self, future):

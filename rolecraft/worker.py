@@ -1,4 +1,5 @@
 import logging
+import threading
 
 from .consumer import Consumer
 from .message import Message
@@ -55,6 +56,8 @@ class Worker:
                 self._handle_leftover(message)
                 return
             self._handle(message)
+
+        logger.info(f"Worker {threading.current_thread().name} stopped.")
 
     def _handle(self, message: Message):
         try:
