@@ -39,13 +39,13 @@ class DefaultQueueDiscovery(QueueDiscovery):
         )
 
         for role in self.role_hanger or ():
-            if not role.queue_name:
+            queue_name = role.options.get("queue_name")
+            if queue_name is None:
                 continue
-            broker = role.options.get("broker")
-            if broker:
-                queue_names_by_broker[broker].append(role.queue_name)
+            if broker := role.options.get("broker"):
+                queue_names_by_broker[broker].append(queue_name)
             else:
-                queue_names.append(role.queue_name)
+                queue_names.append(queue_name)
 
         config_store = config_store or self.config_store
         if config_store:
