@@ -63,7 +63,7 @@ def test_decorate_with_options(role_decorator, str_serializer):
         return True
 
     assert fn.name == "role_fn"
-    assert fn.queue_name is None
+    assert fn.options.get("queue_name") is None
     assert fn.options.get("broker") is broker
     assert fn.deserializer is str_serializer
 

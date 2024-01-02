@@ -20,11 +20,11 @@ class UnmatchedQueueNameError(CraftError):
 
 
 class RoleDefaultOptions(QueueConfigOptions, EnqueueOptions, total=False):
-    ...
+    queue_name: str
 
 
 class DiaptchMessageOptions(QueueConfigOptions, EnqueueOptions, total=False):
-    ...
+    queue_name: str
 
 
 class Role[**P, R, D: SerializedData]:
@@ -40,7 +40,6 @@ class Role[**P, R, D: SerializedData]:
         serializer: ParamsSerializerType[D],
         deserializer: ParamsSerializerType[SerializedData] | None = None,
         queue_factory: QueueFactory,
-        queue_name: str | None = None,
         **options: Unpack[RoleDefaultOptions],
     ) -> None:
         self.fn = fn
@@ -50,7 +49,6 @@ class Role[**P, R, D: SerializedData]:
         self.deserializer = deserializer
         self.queue_factory = queue_factory
 
-        self.queue_name = queue_name
         self.options = options
 
     @property
@@ -61,7 +59,10 @@ class Role[**P, R, D: SerializedData]:
         return self.fn(*args, **kwds)
 
     def craft(self, message: Message) -> R:
-        if self.queue_name and message.queue.name != self.queue_name:
+        if (
+            "queue_name" in self.options
+            and message.queue.name != self.options["queue_name"]
+        ):
             raise UnmatchedQueueNameError(message)
         return self._craft(message.role_data)
 
@@ -85,7 +86,6 @@ class Role[**P, R, D: SerializedData]:
         args: tuple,
         kwds: dict,
         *,
-        queue_name: str | None = None,
         raw_queue: MessageQueue | None = None,
         **options: Unpack[DiaptchMessageOptions],
     ) -> Message:
@@ -99,8 +99,7 @@ class Role[**P, R, D: SerializedData]:
             queue_configs = _typed_dict.subset_dict(
                 options, QueueConfigOptions
             )
-            if queue_name is None:
-                queue_name = self.queue_name or "default"
+            queue_name = options.pop("queue_name", "default")
             queue = self.queue_factory.get_or_build(
                 queue_name=queue_name, **queue_configs
             )

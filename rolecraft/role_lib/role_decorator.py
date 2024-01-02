@@ -23,7 +23,6 @@ class RoleDecorator[D: SerializedData]:
         queue_factory: QueueFactory | None = None,
         config_store: ConfigStore | None = None,
         role_hanger: RoleHanger | None = None,
-        queue_name: str | None = None,
         **options: Unpack[RoleDefaultOptions],
     ) -> None:
         self.serializer = serializer
@@ -40,7 +39,6 @@ class RoleDecorator[D: SerializedData]:
             else _role_hanger.default_role_hanger
         )
 
-        self.queue_name = queue_name
         self.options = options
 
     @typing.overload
@@ -53,7 +51,6 @@ class RoleDecorator[D: SerializedData]:
         name: str | None = None,
         *,
         deserializer: ParamsSerializerType[SerializedData] | None = None,
-        queue_name: str | None = None,
         **options: Unpack[RoleDefaultOptions],
     ) -> Callable[[Callable[P, R]], Role[P, R, str]]:
         ...
@@ -65,7 +62,6 @@ class RoleDecorator[D: SerializedData]:
         *,
         serializer: ParamsSerializerType[D],
         deserializer: ParamsSerializerType[SerializedData] | None = None,
-        queue_name: str | None = None,
         **options: Unpack[RoleDefaultOptions],
     ) -> Callable[[Callable[P, R]], Role[P, R, D]]:
         ...
@@ -83,12 +79,10 @@ class RoleDecorator[D: SerializedData]:
         *,
         serializer: ParamsSerializerType[D] | None = None,
         deserializer: ParamsSerializerType[SerializedData] | None = None,
-        queue_name: str | None = None,
         **options: Unpack[RoleDefaultOptions],
     ) -> Role[P, R, D] | Role[P, R, str]:
         serializer = serializer or self.serializer
 
-        queue_name = queue_name if queue_name is not None else self.queue_name
         default_options = self.options.copy()
         default_options.update(options)
         options = default_options
@@ -100,7 +94,6 @@ class RoleDecorator[D: SerializedData]:
                 serializer=_serializer.str_serializer,
                 deserializer=deserializer or self.deserializer,
                 queue_factory=self.queue_factory,
-                queue_name=queue_name,
                 **options,
             )
         else:
@@ -110,7 +103,6 @@ class RoleDecorator[D: SerializedData]:
                 serializer=serializer,
                 deserializer=deserializer or self.deserializer,
                 queue_factory=self.queue_factory,
-                queue_name=queue_name,
                 **options,
             )
 
