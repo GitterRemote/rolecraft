@@ -57,6 +57,7 @@ class Service:
 
     def _register_signal(self):
         def handle_signal(signum, frame):
+            logger.info(f"Signal {signal.Signals(signum).name} received.")
             self.stop()
 
         signal.signal(signal.SIGINT, handle_signal)
