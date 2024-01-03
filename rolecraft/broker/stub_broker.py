@@ -103,7 +103,7 @@ class _Queue:
             if not notified or proxy.cancelled:
                 # Edge case: self is the top one and being notifed and timed-out near the same time.
                 if (
-                    self._waiting_queue[0] is self
+                    self._waiting_queue[0] is proxy
                     and len(self._waiting_queue) > 1
                     and self._msg_queue
                 ):
