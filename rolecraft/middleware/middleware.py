@@ -19,7 +19,14 @@ class Middleware:
         return getattr(self.queue, name)
 
     def __call__(self, queue: MessageQueue) -> Self:
-        return self.copy_with(queue)
+        wrapped = self.copy_with(queue)
+
+        # Update is_outmost attribute
+        if getattr(queue, "is_outmost", False) is True:
+            queue.is_outmost = False  # type: ignore
+        wrapped.is_outmost = True
+
+        return wrapped
 
     def copy_with(self, queue: MessageQueue) -> Self:
         return self.__class__(queue=queue, **self.options)

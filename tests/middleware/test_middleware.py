@@ -55,3 +55,13 @@ def test_middleware_delegate(middleware, queue):
     m.enqueue(msg)
     assert queue.enqueue.call_count == 1
     queue.enqueue.assert_called_once_with(msg)
+
+
+def test_middleware_is_outmost(middleware, queue):
+    assert middleware.is_outmost is False
+    assert middleware(queue).is_outmost is True
+
+    m1 = middleware(queue)
+    m2 = middleware(m1)
+    assert m1.is_outmost is False
+    assert m2.is_outmost is True

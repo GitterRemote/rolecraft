@@ -64,10 +64,6 @@ class QueueBuilder:
         for middleware in config.middlewares:
             queue = middleware(queue)
             assert isinstance(queue, MessageQueue)
-
-        if config.middlewares:
-            assert isinstance(queue, _middleware.Middleware)
-            queue.is_outmost = True
         return queue
 
     def _new_queue[M](
