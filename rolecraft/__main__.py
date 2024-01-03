@@ -11,14 +11,20 @@ parser = argparse.ArgumentParser(
 
 parser.add_argument("module")
 parser.add_argument("-w", "--worker-threads", type=int)
+parser.add_argument("--verbose", "-v", action="count", default=0)
 
 if __name__ == "__main__":
-    # TODO: add -v (INFO) -vv (DEBUG) and -q
-    logging.basicConfig(level=logging.INFO)
-
     args = parser.parse_args()
     module: str = args.module
     worker_thread_num: int = args.worker_threads or 1
+    verbose: int = args.verbose
+
+    if verbose == 1:
+        logging.basicConfig(level=logging.INFO)
+    elif verbose > 1:
+        logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.WARNING)
 
     importlib.import_module(module)
 
