@@ -1,3 +1,4 @@
+from .base_broker import BaseBroker
 from .broker import Broker, EnqueueOptions, ReceiveFuture
 from .error import (
     BrokerError,
@@ -19,4 +20,5 @@ __all__ = [
     "RecoverableError",
     "IrrecoverableError",
     "MessageNotFound",
+    "BaseBroker",
 ]
