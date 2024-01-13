@@ -76,10 +76,10 @@ class Broker[Message](abc.ABC):
         queue_name: str | None = None,
         *,
         result=None,
-    ) -> bool:
+    ):
         """Marks the message as completed successfully
 
-        If the operation succeeds, returns True.
+        If the operation fails, raises errors.
         """
         raise NotImplementedError
 
@@ -90,18 +90,18 @@ class Broker[Message](abc.ABC):
         queue_name: str | None = None,
         *,
         exception: Exception,
-    ) -> bool:
+    ):
         """Marks the message as permanently failed.
 
-        If the operation succeeds, returns True.
+        If the operation fails, raises errors.
         """
         raise NotImplementedError
 
     @abstractmethod
-    def requeue(self, message: Message, queue_name: str | None = None) -> bool:
+    def requeue(self, message: Message, queue_name: str | None = None):
         """Requeue the message.
 
-        If the operation succeeds, returns True.
+        If the operation fails, raises errors.
         """
         raise NotImplementedError
 

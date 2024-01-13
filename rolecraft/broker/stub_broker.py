@@ -4,6 +4,7 @@ import threading
 import uuid
 from collections import deque
 
+from . import error as _error
 from .broker import Broker, ReceiveFuture
 from .raw_message import HeaderBytesRawMessage
 
@@ -61,24 +62,22 @@ class _Queue:
             msgs.append(msg)
         return msgs
 
-    def ack(self, message: HeaderBytesRawMessage) -> bool:
+    def ack(self, message: HeaderBytesRawMessage):
         try:
             self._processing_msgs.pop(message.id)
-            return True
         except KeyError:
-            return False
+            raise _error.MessageNotFound
 
-    def nack(self, message: HeaderBytesRawMessage) -> bool:
+    def nack(self, message: HeaderBytesRawMessage):
         return self.ack(message)
 
-    def requeue(self, message: HeaderBytesRawMessage) -> bool:
+    def requeue(self, message: HeaderBytesRawMessage):
         try:
             msg = self._processing_msgs.pop(message.id)
         except KeyError:
-            return False
+            raise _error.MessageNotFound
         else:
             self.enqueue(msg)
-            return True
 
     def receive(
         self, num: int, wait_time_seconds: float | None
@@ -174,7 +173,7 @@ class StubBroker(Broker[HeaderBytesRawMessage]):
         queue_name: str,
         *,
         result=None,
-    ) -> bool:
+    ):
         return self._queues[queue_name].ack(message)
 
     def nack(
@@ -183,10 +182,10 @@ class StubBroker(Broker[HeaderBytesRawMessage]):
         queue_name: str,
         *,
         exception: Exception,
-    ) -> bool:
+    ):
         return self._queues[queue_name].nack(message)
 
-    def requeue(self, message: HeaderBytesRawMessage, queue_name: str) -> bool:
+    def requeue(self, message: HeaderBytesRawMessage, queue_name: str):
         return self._queues[queue_name].requeue(message)
 
     def retry(
@@ -196,11 +195,11 @@ class StubBroker(Broker[HeaderBytesRawMessage]):
         *,
         delay_millis: int = 0,
         exception: Exception | None = None,
-    ) -> bool:
+    ) -> HeaderBytesRawMessage:
         queue = self._queues[queue_name]
-        if queue.ack(message):
-            # TODO: copy a message
-            retries = int(message.headers.get("retries") or 0)
-            message.headers["retries"] = retries + 1
-            return bool(queue.enqueue(message, delay_millis=delay_millis))
-        return False
+        queue.ack(message)
+        # TODO: copy a message
+        retries = int(message.headers.get("retries") or 0)
+        message.headers["retries"] = retries + 1
+        queue.enqueue(message, delay_millis=delay_millis)
+        return message
