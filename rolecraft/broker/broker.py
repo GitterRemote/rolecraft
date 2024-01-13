@@ -77,11 +77,9 @@ class Broker[Message](abc.ABC):
         *,
         result=None,
     ) -> bool:
-        """Marks the task as completed successfully
+        """Marks the message as completed successfully
 
-        Returns: if the message exists and the task is marked as completed,
-            returns True. If the task is not working in process or it is failed
-            permanently, the ack operation will fail to update it as completed.
+        If the operation succeeds, returns True.
         """
         raise NotImplementedError
 
@@ -93,22 +91,17 @@ class Broker[Message](abc.ABC):
         *,
         exception: Exception,
     ) -> bool:
-        """Marks the task as failed.
+        """Marks the message as permanently failed.
 
-        Returns: if the task_id exists and the task is marked as failed,
-            returns True. If the task is not working in process or it is
-            compeleted successfully, the ack operation will fail to update
-            it as failed.
+        If the operation succeeds, returns True.
         """
         raise NotImplementedError
 
     @abstractmethod
     def requeue(self, message: Message, queue_name: str | None = None) -> bool:
-        """Requeue the task when give back the prefetched task.
-        This will mark the task with the idle status.
+        """Requeue the message.
 
-        Returns:
-        If the task is already ended or in retry, then the operation will fail.
+        If the operation succeeds, returns True.
         """
         raise NotImplementedError
 
@@ -120,11 +113,10 @@ class Broker[Message](abc.ABC):
         *,
         delay_millis: int = 0,
         exception: Exception | None = None,
-    ) -> bool:
-        """Requeue retry-able task. This will mark the task with retry status.
+    ) -> Message:
+        """Retry the message, as the handling of it has failed.
 
-        Returns:
-        If the task is already eneded or in idle, then the operation will failed.
+        Returns: returns a message object.
         """
         raise NotImplementedError
 
