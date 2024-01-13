@@ -122,3 +122,7 @@ class Broker[Message](abc.ABC):
 
     def close(self):
         pass
+
+    def prepare_queue(self, queue_name: str):
+        """create the queue and relevant resources if necessary"""
+        pass
