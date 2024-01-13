@@ -7,7 +7,7 @@ from rolecraft.queue import MessageQueue
 
 from . import queue_builder as _queue_builder
 from .config_fetcher import ConfigFetcher
-from .queue_builder import QueueAndNameKeys, QueueConfigOptions
+from .queue_builder import QueueBuildOptions, QueueConfigOptions
 
 
 class QueueFactory:
@@ -86,7 +86,7 @@ class QueueFactory:
         self,
         *,
         config_fetcher: ConfigFetcher | None = None,
-        **kwds: Unpack[QueueAndNameKeys],
+        **kwds: Unpack[QueueBuildOptions],
     ) -> list[MessageQueue]:
         """Always build brand new queues from the latest configuration."""
         builder = self._get_queue_builder(config_fetcher)

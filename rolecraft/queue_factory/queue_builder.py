@@ -1,13 +1,12 @@
 from typing import TypedDict, Unpack
 
-from rolecraft import middleware as _middleware
 from rolecraft.broker import Broker
 from rolecraft.queue import MessageQueue
 
 from .config_fetcher import ConfigFetcher, QueueConfig, QueueConfigOptions
 
 
-class QueueAndNameKeys(TypedDict, total=False):
+class QueueBuildOptions(TypedDict, total=False):
     queue_names: list[str] | None
     queue_names_by_broker: dict[Broker, list[str]] | None
     raw_queues: list[MessageQueue] | None
@@ -22,7 +21,7 @@ class QueueBuilder:
     def build_one(self, queue_name: str, **kwds: Unpack[QueueConfigOptions]):
         return self._build_queue(queue_name, **kwds)
 
-    def build(self, **kwds: Unpack[QueueAndNameKeys]) -> list[MessageQueue]:
+    def build(self, **kwds: Unpack[QueueBuildOptions]) -> list[MessageQueue]:
         all_queues = []
 
         if queue_names := kwds.get("queue_names"):

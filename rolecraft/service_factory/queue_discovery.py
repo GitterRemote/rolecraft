@@ -2,14 +2,14 @@ from collections import defaultdict
 from typing import Protocol
 
 from rolecraft.config import ConfigStore
-from rolecraft.queue_factory import QueueAndNameKeys
+from rolecraft.queue_factory import QueueBuildOptions
 from rolecraft.role_lib import RoleHanger
 
 
 class QueueDiscovery(Protocol):
     def __call__(
         self, config_store: ConfigStore | None = None
-    ) -> QueueAndNameKeys:
+    ) -> QueueBuildOptions:
         """Returns: mapping from queue name to the broker
 
         No need to care about QueueConfigOptions bound to the Role. That's role's QueueConfigOptions instead of queue's QueueConfigOptions.
@@ -30,10 +30,10 @@ class DefaultQueueDiscovery(QueueDiscovery):
 
     def __call__(
         self, config_store: ConfigStore | None = None
-    ) -> QueueAndNameKeys:
+    ) -> QueueBuildOptions:
         queue_names_by_broker = defaultdict(list[str])
         queue_names: list[str] = []
-        rv = QueueAndNameKeys(
+        rv = QueueBuildOptions(
             queue_names=queue_names,
             queue_names_by_broker=queue_names_by_broker,
         )
