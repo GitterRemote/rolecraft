@@ -1,4 +1,5 @@
 import dataclasses
+from typing import Self
 
 
 @dataclasses.dataclass(kw_only=True)
@@ -14,3 +15,6 @@ class HeaderBytesRawMessage(BytesRawMessage):
     headers: dict[str, str | int | float] = dataclasses.field(
         default_factory=dict
     )
+
+    def replace(self, **kwds) -> Self:
+        return dataclasses.replace(self, **kwds)
