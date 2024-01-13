@@ -5,7 +5,8 @@ import uuid
 from collections import deque
 
 from . import error as _error
-from .broker import Broker, ReceiveFuture
+from .base_broker import BaseBroker
+from .broker import ReceiveFuture
 from .raw_message import HeaderBytesRawMessage
 
 
@@ -137,7 +138,7 @@ class _ReceiveFuture(ReceiveFuture[HeaderBytesRawMessage]):
         return id(self._proxy)
 
 
-class StubBroker(Broker[HeaderBytesRawMessage]):
+class StubBroker(BaseBroker):
     def __init__(self) -> None:
         self._queues = collections.defaultdict[str, _Queue](_Queue)
 
@@ -147,7 +148,8 @@ class StubBroker(Broker[HeaderBytesRawMessage]):
         message: HeaderBytesRawMessage,
         **options,
     ) -> str:
-        if "priority" in options or "delay_millis" in options:
+        delay_millis = options.get("delay_millis") or 0
+        if "priority" in options or delay_millis > 0:
             raise NotImplementedError
         queue = self._queues[queue_name]
         return queue.enqueue(message, **options)
@@ -187,19 +189,3 @@ class StubBroker(Broker[HeaderBytesRawMessage]):
 
     def requeue(self, message: HeaderBytesRawMessage, queue_name: str):
         return self._queues[queue_name].requeue(message)
-
-    def retry(
-        self,
-        message: HeaderBytesRawMessage,
-        queue_name: str,
-        *,
-        delay_millis: int = 0,
-        exception: Exception | None = None,
-    ) -> HeaderBytesRawMessage:
-        queue = self._queues[queue_name]
-        queue.ack(message)
-        # TODO: copy a message
-        retries = int(message.headers.get("retries") or 0)
-        message.headers["retries"] = retries + 1
-        queue.enqueue(message, delay_millis=delay_millis)
-        return message
