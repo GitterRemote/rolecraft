@@ -69,6 +69,7 @@ class QueueBuilder:
     def _new_queue[M](
         self, name: str, config: QueueConfig[M]
     ) -> MessageQueue[M]:
+        config.broker.prepare_queue(name)
         return MessageQueue(
             name=name,
             broker=config.broker,
