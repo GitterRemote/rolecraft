@@ -79,11 +79,7 @@ class Worker:
             message.id,
         )
         try:
-            if not message.requeue():
-                logger.error(
-                    "requeuing leftover message failed: %s",
-                    message.id,
-                )
+            message.requeue()
         except Exception as e:
             logger.error(
                 "requeuing leftover message failed: %s",
@@ -97,11 +93,7 @@ class Worker:
         exception: Exception,
     ):
         try:
-            if not message.nack(exception=exception):
-                logger.error(
-                    "nack message failed: %s",
-                    message.id,
-                )
+            message.nack(exception=exception)
         except Exception as e:
             logger.error(
                 "nack message failed: %s",
@@ -115,11 +107,7 @@ class Worker:
         result,
     ):
         try:
-            if not message.ack(result=result):
-                logger.error(
-                    "ack message failed: %s",
-                    message.id,
-                )
+            message.ack(result=result)
         except Exception as e:
             logger.error(
                 "ack message failed: %s",

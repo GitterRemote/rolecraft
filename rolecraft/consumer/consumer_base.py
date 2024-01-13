@@ -1,8 +1,10 @@
 import abc
-from collections.abc import Sequence
 import logging
-from rolecraft.queue import MessageQueue
+from collections.abc import Sequence
+
 from rolecraft.message import Message
+from rolecraft.queue import MessageQueue
+
 from .consumer import Consumer, ConsumerStoppedError
 
 logger = logging.getLogger(__name__)
@@ -56,8 +58,7 @@ class ConsumerBase(Consumer):
         for message in messages:
             logger.warning("Requeue the message %s after stopping", message.id)
             try:
-                if not message.requeue():
-                    logger.error("Requeue message error: %s", message.id)
+                message.requeue()
             except Exception as e:
                 logger.error(
                     "Requeue message error: %s", message.id, exc_info=e
