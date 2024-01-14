@@ -4,6 +4,7 @@ from .queue_builder import (
     QueueConfigOptions,
 )
 from .queue_factory import BatchBuildOptions, QueueFactory
+from .cached_queue_factory import CachedQueueFactory
 
 __all__ = [
     "QueueFactory",
@@ -11,4 +12,5 @@ __all__ = [
     "QueueConfigOptions",
     "QueueBuildOptions",
     "QueueAndNameKeys",
+    "CachedQueueFactory",
 ]
