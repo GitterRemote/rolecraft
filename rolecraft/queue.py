@@ -1,7 +1,7 @@
 import abc
 import functools
 import typing
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from typing import Any, Concatenate
 
 from rolecraft.broker import Broker, EnqueueOptions, ReceiveFuture
@@ -51,7 +51,7 @@ class MessageQueue[RawMessage](abc.ABC):
         broker: Broker[RawMessage],
         encoder: Encoder[RawMessage],
         wait_time_seconds: int | None = None,
-        settings: dict[str, Any] | None = None,
+        settings: Mapping[str, Any] | None = None,
     ) -> None:
         self.name = name
         self.broker = broker

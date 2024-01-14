@@ -63,10 +63,13 @@ def test_get_and_build_with_params(
     assert queue.broker is broker2
     assert queue.encoder is queue_config.encoder
 
-    queue = queue_factory.get_or_build(
+    queue2 = queue_factory.get_or_build(
         queue_name="queue1", broker=broker2, encoder=encoder2
     )
-    assert queue.encoder is encoder2
+    # cached key is (queue_name, broker), so it will return the same queue even with a different encoder
+    assert queue2.encoder is not encoder2
+    assert queue2.encoder is queue.encoder
+    assert queue2 is queue
 
 
 def test_get_and_build_with_middlewares(queue_factory, broker2, encoder2):
@@ -105,31 +108,26 @@ def test_get_and_build_cache(queue_factory, broker2, encoder2):
             encoder=encoder2,
             middlewares=[middleware_mod.Retryable()],
         )
-        assert queue2 is not queue
-        # As that Retryable doesn't implement __eq__, so the build_method will be call again
-        assert middleware_mod.Retryable() != middleware_mod.Retryable()
-        assert build_method.call_count == 2
-
-    retryable = middleware_mod.Retryable()
-    with mock.patch.object(
-        queue_builder_mod.QueueBuilder, "build_queue", side_effect=build_queue
-    ) as build_method:
-        queue = queue_factory.get_or_build(
-            queue_name="queue1",
-            broker=broker2,
-            encoder=encoder2,
-            middlewares=[retryable],
-        )
-        assert queue
-        assert build_method.call_count == 1
-        queue2 = queue_factory.get_or_build(
-            queue_name="queue1",
-            broker=broker2,
-            encoder=encoder2,
-            middlewares=[retryable],
-        )
         assert queue2 is queue
         assert build_method.call_count == 1
+
+        queue3 = queue_factory.get_or_build(
+            queue_name="queue1",
+            broker=broker2,
+            encoder=encoder2,
+            middlewares=[],
+        )
+        assert queue3 is queue
+        assert build_method.call_count == 1
+
+        queue4 = queue_factory.get_or_build(
+            queue_name="queue2",
+            broker=broker2,
+            encoder=encoder2,
+            middlewares=[],
+        )
+        assert queue4 is not queue
+        assert build_method.call_count == 2
 
 
 def test_build_queues_empty(queue_factory, queue_config):

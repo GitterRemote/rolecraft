@@ -1,8 +1,9 @@
 import functools
 import typing
-from collections.abc import Hashable
+from collections.abc import Callable
 from typing import Unpack
 
+from rolecraft.broker import Broker
 from rolecraft.queue import MessageQueue
 from rolecraft.utils import typed_dict as _typed_dict
 
@@ -24,6 +25,7 @@ class QueueFactory:
 
     def __init__(self, config_fetcher: ConfigFetcher | None = None) -> None:
         self.config_fetcher = config_fetcher
+        self._queues = dict[tuple[str, Broker | None], MessageQueue]()
 
     @typing.overload
     def get_or_build(
@@ -49,29 +51,39 @@ class QueueFactory:
         raw_queue: MessageQueue | None = None,
         **kwds: Unpack[QueueConfigOptions],
     ) -> MessageQueue:
-        """Build the queue then cache it. The second call will fetch from the cache if with the same parameters.
-
-        For simplification, current cache totally depends on functools.cache, where parameter changes, even the order, will affect the result.
-        """
+        """Build the queue then cache it. The second call will fetch from the cache if with the same parameters."""
         if raw_queue:
             if queue_name is not None or kwds:
                 raise ValueError(
                     "Extra parameters are not allowed with raw_queue"
                 )
-            return self._get_or_build_raw_queue(raw_queue)
+            key = (raw_queue.name, raw_queue.broker)
+            builder = functools.partial(self._build_raw_queue, raw_queue)
         elif queue_name is None:
             raise ValueError("queue_name or raw_queue should be specified")
+        else:
+            key = (queue_name, kwds.get("broker"))
+            builder = functools.partial(
+                self._build_queue, queue_name=queue_name, **kwds
+            )
 
-        if (middlewares := kwds.get("middlewares")) and not isinstance(
-            middlewares, Hashable
-        ):
-            kwds["middlewares"] = tuple(middlewares)
-        queue = self._get_or_build(queue_name=queue_name, **kwds)
+        queue = self._cached_queue(key, builder)
         assert queue.name == queue_name
         return queue
 
-    @functools.cache
-    def _get_or_build(
+    def _cached_queue(
+        self,
+        key: tuple[str, Broker | None],
+        builder: Callable[[], MessageQueue],
+    ) -> MessageQueue:
+        if queue := self._queues.get(key):
+            return queue
+
+        queue = builder()
+        self._queues[key] = queue
+        return queue
+
+    def _build_queue(
         self,
         queue_name: str,
         **kwds: Unpack[QueueConfigOptions],
@@ -80,16 +92,14 @@ class QueueFactory:
         builder = self._get_queue_builder()
         return builder.build_queue(queue_name, **kwds)
 
-    @functools.cache
-    def _get_or_build_raw_queue(self, raw_queue: MessageQueue) -> MessageQueue:
+    def _build_raw_queue(self, raw_queue: MessageQueue) -> MessageQueue:
         # Be mind that the function can called more than once if another thread makes an additional call before the initial call has been completed and cached.
         builder = self._get_queue_builder()
         return builder.setup_queue(raw_queue)
 
     def clear(self):
         """Clear all cached queue. It is useful in UT"""
-        self._get_or_build.cache_clear()
-        self._get_or_build_raw_queue.cache_clear()
+        self._queues.clear()
 
     def build_queues(
         self,
