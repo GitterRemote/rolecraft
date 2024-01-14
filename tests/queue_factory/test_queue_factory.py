@@ -83,13 +83,13 @@ def test_get_and_build_with_middlewares(queue_factory, broker2, encoder2):
 
 
 def test_get_and_build_cache(queue_factory, broker2, encoder2):
-    def build_one(queue_name, *args, **kwargs):
+    def build_queue(queue_name, *args, **kwargs):
         q = mock.MagicMock()
         q.name = queue_name
         return q
 
     with mock.patch.object(
-        queue_builder_mod.QueueBuilder, "build_one", side_effect=build_one
+        queue_builder_mod.QueueBuilder, "build_queue", side_effect=build_queue
     ) as build_method:
         queue = queue_factory.get_or_build(
             queue_name="queue1",
@@ -112,7 +112,7 @@ def test_get_and_build_cache(queue_factory, broker2, encoder2):
 
     retryable = middleware_mod.Retryable()
     with mock.patch.object(
-        queue_builder_mod.QueueBuilder, "build_one", side_effect=build_one
+        queue_builder_mod.QueueBuilder, "build_queue", side_effect=build_queue
     ) as build_method:
         queue = queue_factory.get_or_build(
             queue_name="queue1",
