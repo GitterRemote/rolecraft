@@ -1,15 +1,16 @@
 import abc
 from abc import abstractmethod
+from collections.abc import Hashable
 from typing import TypedDict
 
 
 class EnqueueOptions(TypedDict, total=False):
     priority: int
     delay_millis: int
-    create_queue: bool
+    auto_create_queue: bool
 
 
-class ReceiveFuture[Message](abc.ABC):
+class ReceiveFuture[Message](abc.ABC, Hashable):
     @abstractmethod
     def result(self) -> list[Message]:
         """Return an empty list asap when cancel() is called."""
@@ -17,10 +18,6 @@ class ReceiveFuture[Message](abc.ABC):
 
     @abstractmethod
     def cancel(self):
-        raise NotImplementedError
-
-    @abstractmethod
-    def __hash__(self) -> int:
         raise NotImplementedError
 
 
@@ -33,7 +30,7 @@ class Broker[Message](abc.ABC):
         *,
         priority: int = 50,
         delay_millis: int = 0,
-        create_queue: bool = False,
+        auto_create_queue: bool = False,
         **kwargs,
     ) -> str:
         raise NotImplementedError
