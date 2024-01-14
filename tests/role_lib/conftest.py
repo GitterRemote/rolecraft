@@ -23,5 +23,5 @@ def queue():
 @pytest.fixture()
 def queue_factory(queue):
     factory = mock.MagicMock()
-    factory.get_or_build.return_value = queue
+    factory.build_queue.return_value = queue
     return factory

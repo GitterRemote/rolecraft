@@ -70,7 +70,7 @@ def test_dispatch_message_ext(role, queue, queue_factory):
     assert msg
     assert msg.queue is queue
     queue.enqueue.assert_called_once_with(msg)
-    queue_factory.get_or_build.assert_called_once_with(queue_name="default")
+    queue_factory.build_queue.assert_called_once_with(queue_name="default")
 
 
 def test_dispatch_message_ext_with_options(role, queue):
