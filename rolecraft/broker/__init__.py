@@ -4,6 +4,7 @@ from .error import (
     BrokerError,
     IrrecoverableError,
     MessageNotFound,
+    QueueNotFound,
     RecoverableError,
 )
 from .raw_message import BytesRawMessage, HeaderBytesRawMessage
@@ -21,4 +22,5 @@ __all__ = [
     "IrrecoverableError",
     "MessageNotFound",
     "BaseBroker",
+    "QueueNotFound",
 ]
