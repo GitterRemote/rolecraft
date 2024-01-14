@@ -34,7 +34,9 @@ def clear_role_decorator():
     # TODO: add clear method to role decorator
     role.role_hanger.clear()
     # If the queue factory doesn't clear its cached queue, then the broker will be different from the service' broker, which is a brand new broker object.
-    role.queue_factory.clear()
+    clear_method = getattr(role.queue_factory, "clear", None)
+    if clear_method:
+        clear_method()
 
 
 @pytest.fixture(params=[1, 2, 3], ids=["1 worker", "2 workers", "3 workers"])
