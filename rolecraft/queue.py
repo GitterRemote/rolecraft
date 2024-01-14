@@ -115,3 +115,6 @@ class MessageQueue[RawMessage](abc.ABC):
 
     def close(self):
         return self.broker.close()
+
+    def prepare(self):
+        return self.broker.prepare_queue(self.name)

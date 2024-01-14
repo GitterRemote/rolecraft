@@ -10,6 +10,7 @@ class QueueBuildOptions(TypedDict, total=False):
     queue_names: list[str] | None
     queue_names_by_broker: dict[Broker, list[str]] | None
     raw_queues: list[MessageQueue] | None
+    prepare: bool
 
 
 class QueueBuilder:
@@ -22,7 +23,7 @@ class QueueBuilder:
         return self._build_queue(queue_name, **kwds)
 
     def build(self, **kwds: Unpack[QueueBuildOptions]) -> list[MessageQueue]:
-        all_queues = []
+        all_queues: list[MessageQueue] = []
 
         if queue_names := kwds.get("queue_names"):
             all_queues.extend(self._build_queues(queue_names))
@@ -34,7 +35,11 @@ class QueueBuilder:
                 )
 
         if raw_queues := kwds.get("raw_queues"):
-            all_queues.extend(raw_queues)
+            all_queues.extend(raw_queues)  # FIXME: wrap it
+
+        if kwds.get("prepare", True):
+            for queue in all_queues:
+                queue.prepare()
 
         return all_queues
 
@@ -68,7 +73,6 @@ class QueueBuilder:
     def _new_queue[M](
         self, name: str, config: QueueConfig[M]
     ) -> MessageQueue[M]:
-        config.broker.prepare_queue(name)
         return MessageQueue(
             name=name,
             broker=config.broker,
