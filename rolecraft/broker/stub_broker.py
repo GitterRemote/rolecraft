@@ -160,7 +160,7 @@ class StubBroker(BaseBroker):
         *,
         max_number: int = 1,
         wait_time_seconds: float | None = None,
-        meta_keys: list[str] | None = None,
+        header_keys: list[str] | None = None,
     ) -> ReceiveFuture[HeaderBytesRawMessage]:
         queue = self._queues[queue_name]
         proxy = queue.receive(max_number, wait_time_seconds)

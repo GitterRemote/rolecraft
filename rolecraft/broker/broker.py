@@ -42,7 +42,7 @@ class Broker[Message](abc.ABC):
         *,
         max_number: int = 1,
         wait_time_seconds: float | None = None,
-        meta_keys: list[str] | None = None,
+        header_keys: list[str] | None = None,
     ) -> ReceiveFuture[Message]:
         raise NotImplementedError
 
@@ -51,13 +51,13 @@ class Broker[Message](abc.ABC):
         queue_name: str,
         *,
         max_number: int = 1,
-        meta_keys: list[str] | None = None,
+        header_keys: list[str] | None = None,
     ) -> list[Message]:
         return self.block_receive(
             queue_name,
             wait_time_seconds=0,
             max_number=max_number,
-            meta_keys=meta_keys,
+            header_keys=header_keys,
         ).result()
 
     @abstractmethod
