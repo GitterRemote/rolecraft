@@ -1,7 +1,7 @@
 import dataclasses
 import typing
 from collections.abc import Sequence
-from typing import Self, TypedDict, TypeVar, Unpack
+from typing import Any, Self, TypedDict, TypeVar, Unpack
 
 from rolecraft.broker import Broker
 from rolecraft.encoder import Encoder
@@ -13,6 +13,7 @@ M_co = TypeVar("M_co", covariant=True)
 class PartialQueueConfigOptions(TypedDict, total=False):
     middlewares: Sequence[Middleware] | MiddlewareList
     wait_time_seconds: int | None
+    settings: dict[str, Any]
 
 
 class QueueConfigOptions[M](PartialQueueConfigOptions, total=False):
@@ -26,6 +27,7 @@ class PartialQueueConfig:
         default_factory=MiddlewareList
     )
     wait_time_seconds: int | None = None
+    settings: dict[str, Any] = dataclasses.field(default_factory=dict)
 
     def replace(self, **kwds: Unpack[PartialQueueConfigOptions]) -> Self:
         return dataclasses.replace(self, **kwds)
