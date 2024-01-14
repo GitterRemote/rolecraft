@@ -51,11 +51,13 @@ class MessageQueue[RawMessage](abc.ABC):
         broker: Broker[RawMessage],
         encoder: Encoder[RawMessage],
         wait_time_seconds: int | None = None,
+        settings: dict[str, Any] | None = None,
     ) -> None:
         self.name = name
         self.broker = broker
         self.encoder = encoder
         self.wait_time_seconds = wait_time_seconds
+        self.settings = settings or {}
 
     @copy_method_signature(Broker[Message].enqueue)
     def enqueue(self, message: Message, *args, **kwargs):
@@ -117,4 +119,4 @@ class MessageQueue[RawMessage](abc.ABC):
         return self.broker.close()
 
     def prepare(self):
-        return self.broker.prepare_queue(self.name)
+        return self.broker.prepare_queue(self.name, **self.settings)
