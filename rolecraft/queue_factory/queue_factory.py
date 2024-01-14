@@ -4,10 +4,19 @@ from collections.abc import Hashable
 from typing import Unpack
 
 from rolecraft.queue import MessageQueue
+from rolecraft.utils import typed_dict as _typed_dict
 
 from . import queue_builder as _queue_builder
 from .config_fetcher import ConfigFetcher
-from .queue_builder import QueueBuildOptions, QueueConfigOptions
+from .queue_builder import (
+    QueueAndNameKeys,
+    QueueBuildOptions,
+    QueueConfigOptions,
+)
+
+
+class BatchBuildOptions(QueueAndNameKeys, QueueBuildOptions, total=False):
+    ...
 
 
 class QueueFactory:
@@ -69,13 +78,13 @@ class QueueFactory:
     ) -> MessageQueue:
         # Be mind that the function can called more than once if another thread makes an additional call before the initial call has been completed and cached.
         builder = self._get_queue_builder()
-        return builder.build_one(queue_name, **kwds)
+        return builder.build_queue(queue_name, **kwds)
 
     @functools.cache
     def _get_or_build_raw_queue(self, raw_queue: MessageQueue) -> MessageQueue:
         # Be mind that the function can called more than once if another thread makes an additional call before the initial call has been completed and cached.
         builder = self._get_queue_builder()
-        return builder.wrap(raw_queue)
+        return builder.setup_queue(raw_queue)
 
     def clear(self):
         """Clear all cached queue. It is useful in UT"""
@@ -86,17 +95,24 @@ class QueueFactory:
         self,
         *,
         config_fetcher: ConfigFetcher | None = None,
-        **kwds: Unpack[QueueBuildOptions],
+        **kwds: Unpack[BatchBuildOptions],
     ) -> list[MessageQueue]:
         """Always build brand new queues from the latest configuration."""
-        builder = self._get_queue_builder(config_fetcher)
+        build_options = _typed_dict.subset_dict(kwds, QueueBuildOptions)
+        builder = self._get_queue_builder(config_fetcher, build_options)
         return builder.build(**kwds)
 
-    def _get_queue_builder(self, config_fetcher: ConfigFetcher | None = None):
+    def _get_queue_builder(
+        self,
+        config_fetcher: ConfigFetcher | None = None,
+        build_options: QueueBuildOptions | None = None,
+    ):
         config_fetcher = config_fetcher or self._get_config_fetcher()
         if not config_fetcher:
             raise ValueError("config_fetcher must exist")
-        return _queue_builder.QueueBuilder(config_fetcher=config_fetcher)
+        return _queue_builder.QueueBuilder(
+            config_fetcher=config_fetcher, options=build_options or {}
+        )
 
     def _get_config_fetcher(self) -> ConfigFetcher | None:
         return self.config_fetcher
