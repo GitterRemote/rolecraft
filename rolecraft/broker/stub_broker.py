@@ -189,3 +189,7 @@ class StubBroker(BaseBroker):
 
     def requeue(self, message: HeaderBytesRawMessage, queue_name: str):
         return self._queues[queue_name].requeue(message)
+
+    def prepare_queue(self, queue_name: str, **kwds):
+        if queue_name not in self._queues:
+            self._queues[queue_name] = _Queue()
