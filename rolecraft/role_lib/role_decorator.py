@@ -5,7 +5,7 @@ from typing import Unpack
 
 from rolecraft import config as _config
 from rolecraft.config import ConfigStore
-from rolecraft.queue_factory import QueueFactory
+from rolecraft.queue_factory import CachedQueueFactory, QueueFactory
 
 from . import role_hanger as _role_hanger
 from . import serializer as _serializer
@@ -29,7 +29,7 @@ class RoleDecorator[D: SerializedData]:
         self.deserializer = deserializer or _serializer.hybrid_deserializer
 
         config_store = config_store or _config.global_config.get_or_future()
-        self.queue_factory = queue_factory or QueueFactory(
+        self.queue_factory = queue_factory or CachedQueueFactory(
             config_fetcher=config_store.fetcher
         )
 
