@@ -35,7 +35,7 @@ class QueueBuilder:
                 )
 
         if raw_queues := kwds.get("raw_queues"):
-            all_queues.extend(raw_queues)  # FIXME: wrap it
+            all_queues.extend(map(self.wrap, raw_queues))
 
         if kwds.get("prepare", True):
             for queue in all_queues:
