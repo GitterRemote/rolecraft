@@ -1,6 +1,7 @@
-from typing import TypedDict, Unpack
+from typing import Sequence, TypedDict, Unpack
 
 from rolecraft.broker import Broker
+from rolecraft.middleware import Middleware
 from rolecraft.queue import MessageQueue
 
 from .config_fetcher import ConfigFetcher, QueueConfig, QueueConfigOptions
@@ -55,17 +56,17 @@ class QueueBuilder:
 
     def _build_queue_with_config(self, queue_name: str, config: QueueConfig):
         queue = self._new_queue(queue_name, config)
-        return self._wrap(queue, config)
+        return self._wrap(queue, config.middlewares)
 
     def wrap(self, raw_queue: MessageQueue) -> MessageQueue:
         config = self.config_fetcher(raw_queue.name, broker=raw_queue.broker)
-        return self._wrap(raw_queue, config)
+        return self._wrap(raw_queue, config.middlewares)
 
     def _wrap(
-        self, raw_queue: MessageQueue, config: QueueConfig
+        self, raw_queue: MessageQueue, middlewares: Sequence[Middleware]
     ) -> MessageQueue:
         queue = raw_queue
-        for middleware in config.middlewares:
+        for middleware in middlewares:
             queue = middleware(queue)
             assert isinstance(queue, MessageQueue)
         return queue
