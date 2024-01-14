@@ -9,7 +9,7 @@ from rolecraft import worker as _worker
 from rolecraft import worker_pool as _worker_pool
 from rolecraft.config import ConfigStore
 from rolecraft.consumer import ConsumerFactory, ConsumerOptions
-from rolecraft.queue_factory import QueueBuildOptions, QueueFactory
+from rolecraft.queue_factory import BatchBuildOptions, QueueFactory
 from rolecraft.role_lib import RoleHanger
 from rolecraft.utils import typed_dict as _typed_dict
 from rolecraft.worker_pool import WorkerPool
@@ -21,7 +21,7 @@ from .service import Service
 logger = logging.getLogger(__name__)
 
 
-class ServiceCreateOptions(QueueBuildOptions, ConsumerOptions, total=False):
+class ServiceCreateOptions(BatchBuildOptions, ConsumerOptions, total=False):
     ...
 
 
@@ -62,11 +62,13 @@ class ServiceFactory:
 
         The consumer will use the queue names and paired brokers to fetch messages."""
 
-        queue_options = _typed_dict.subset_dict(options, QueueBuildOptions)
+        queue_options = _typed_dict.subset_dict(options, BatchBuildOptions)
         consumer_options = _typed_dict.subset_dict(options, ConsumerOptions)
 
         if not queue_options:
-            queue_options = self.queue_discovery(config_store=config_store)
+            queue_options.update(
+                **self.queue_discovery(config_store=config_store)
+            )
 
         queues = self.queue_factory.build_queues(
             config_fetcher=config_store.fetcher if config_store else None,

@@ -7,23 +7,29 @@ from rolecraft.queue import MessageQueue
 from .config_fetcher import ConfigFetcher, QueueConfig, QueueConfigOptions
 
 
-class QueueBuildOptions(TypedDict, total=False):
+class QueueAndNameKeys(TypedDict, total=False):
     queue_names: list[str] | None
     queue_names_by_broker: dict[Broker, list[str]] | None
     raw_queues: list[MessageQueue] | None
+
+
+class QueueBuildOptions(TypedDict, total=False):
     prepare: bool
 
 
 class QueueBuilder:
     """Build and decorate queues according to the queue config."""
 
-    def __init__(self, config_fetcher: ConfigFetcher):
+    def __init__(
+        self, config_fetcher: ConfigFetcher, options: QueueBuildOptions
+    ):
         self.config_fetcher = config_fetcher
+        self.options = options
 
-    def build_one(self, queue_name: str, **kwds: Unpack[QueueConfigOptions]):
+    def build_queue(self, queue_name: str, **kwds: Unpack[QueueConfigOptions]):
         return self._build_queue(queue_name, **kwds)
 
-    def build(self, **kwds: Unpack[QueueBuildOptions]) -> list[MessageQueue]:
+    def build(self, **kwds: Unpack[QueueAndNameKeys]) -> list[MessageQueue]:
         all_queues: list[MessageQueue] = []
 
         if queue_names := kwds.get("queue_names"):
@@ -36,11 +42,7 @@ class QueueBuilder:
                 )
 
         if raw_queues := kwds.get("raw_queues"):
-            all_queues.extend(map(self.wrap, raw_queues))
-
-        if kwds.get("prepare", True):
-            for queue in all_queues:
-                queue.prepare()
+            all_queues.extend(map(self.setup_queue, raw_queues))
 
         return all_queues
 
@@ -52,15 +54,20 @@ class QueueBuilder:
         self, queue_name: str, **kwds: Unpack[QueueConfigOptions]
     ):
         config = self.config_fetcher(queue_name, **kwds)
-        return self._build_queue_with_config(queue_name, config)
-
-    def _build_queue_with_config(self, queue_name: str, config: QueueConfig):
         queue = self._new_queue(queue_name, config)
-        return self._wrap(queue, config.middlewares)
+        return self._setup_queue(queue, config)
 
-    def wrap(self, raw_queue: MessageQueue) -> MessageQueue:
+    def setup_queue(self, raw_queue: MessageQueue) -> MessageQueue:
         config = self.config_fetcher(raw_queue.name, broker=raw_queue.broker)
-        return self._wrap(raw_queue, config.middlewares)
+        return self._setup_queue(raw_queue, config)
+
+    def _setup_queue(
+        self, raw_queue: MessageQueue, queue_config: QueueConfig
+    ) -> MessageQueue:
+        wrapped = self._wrap(raw_queue, queue_config.middlewares)
+        if self.options.get("prepare", True):
+            wrapped.prepare()
+        return wrapped
 
     def _wrap(
         self, raw_queue: MessageQueue, middlewares: Sequence[Middleware]
