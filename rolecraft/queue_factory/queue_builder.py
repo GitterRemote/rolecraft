@@ -65,7 +65,7 @@ class QueueBuilder:
         self, raw_queue: MessageQueue, queue_config: QueueConfig
     ) -> MessageQueue:
         wrapped = self._wrap(raw_queue, queue_config.middlewares)
-        if self.options.get("prepare", True):
+        if self.options.get("prepare", False):
             wrapped.prepare()
         return wrapped
 

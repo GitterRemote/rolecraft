@@ -114,5 +114,7 @@ class Broker[Message](abc.ABC):
         pass
 
     def prepare_queue(self, queue_name: str, **kwargs):
-        """create the queue if not exists and prepare relevant resources if necessary"""
-        pass
+        """Prepare the queue for a long running process.
+
+        Create the queue if not exists and prepare relevant resources if necessary.
+        """
