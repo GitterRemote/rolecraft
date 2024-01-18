@@ -20,11 +20,14 @@ if __name__ == "__main__":
     verbose: int = args.verbose
 
     if verbose == 1:
-        logging.basicConfig(level=logging.INFO)
+        logging_level = logging.INFO
     elif verbose > 1:
-        logging.basicConfig(level=logging.DEBUG)
+        logging_level = logging.DEBUG
     else:
-        logging.basicConfig(level=logging.WARNING)
+        logging_level = logging.WARNING
+    logging.basicConfig(
+        level=logging_level, format=f"%(asctime)s:{logging.BASIC_FORMAT}"
+    )
 
     importlib.import_module(module)
 
