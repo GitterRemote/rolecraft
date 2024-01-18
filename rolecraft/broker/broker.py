@@ -1,24 +1,14 @@
 import abc
 from abc import abstractmethod
-from collections.abc import Hashable
 from typing import TypedDict
+
+from .receive_future import ReceiveFuture
 
 
 class EnqueueOptions(TypedDict, total=False):
     priority: int
     delay_millis: int
     auto_create_queue: bool
-
-
-class ReceiveFuture[Message](abc.ABC, Hashable):
-    @abstractmethod
-    def result(self) -> list[Message]:
-        """Return an empty list asap when cancel() is called."""
-        raise NotImplementedError
-
-    @abstractmethod
-    def cancel(self):
-        raise NotImplementedError
 
 
 class Broker[Message](abc.ABC):
@@ -43,7 +33,7 @@ class Broker[Message](abc.ABC):
         max_number: int = 1,
         wait_time_seconds: float | None = None,
         header_keys: list[str] | None = None,
-    ) -> ReceiveFuture[Message]:
+    ) -> ReceiveFuture[list[Message]]:
         raise NotImplementedError
 
     def receive(

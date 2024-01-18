@@ -6,8 +6,8 @@ from collections import deque
 
 from . import error as _error
 from .base_broker import BaseBroker
-from .broker import ReceiveFuture
 from .raw_message import HeaderBytesRawMessage
+from .receive_future import ReceiveFuture
 
 
 @dataclasses.dataclass
@@ -125,7 +125,7 @@ class _Queue:
 
 
 @dataclasses.dataclass
-class _ReceiveFuture(ReceiveFuture[HeaderBytesRawMessage]):
+class _ReceiveFuture(ReceiveFuture[list[HeaderBytesRawMessage]]):
     _proxy: _QueueWaitProxy
 
     def result(self) -> list[HeaderBytesRawMessage]:
@@ -161,7 +161,7 @@ class StubBroker(BaseBroker):
         max_number: int = 1,
         wait_time_seconds: float | None = None,
         header_keys: list[str] | None = None,
-    ) -> ReceiveFuture[HeaderBytesRawMessage]:
+    ) -> ReceiveFuture[list[HeaderBytesRawMessage]]:
         queue = self._queues[queue_name]
         proxy = queue.receive(max_number, wait_time_seconds)
         return _ReceiveFuture(proxy)
