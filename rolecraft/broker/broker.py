@@ -33,6 +33,7 @@ class Broker[Message](abc.ABC):
         max_number: int = 1,
         wait_time_seconds: float | None = None,
         header_keys: list[str] | None = None,
+        **kwargs,
     ) -> ReceiveFuture[list[Message]]:
         raise NotImplementedError
 
@@ -42,12 +43,14 @@ class Broker[Message](abc.ABC):
         *,
         max_number: int = 1,
         header_keys: list[str] | None = None,
+        **kwargs,
     ) -> list[Message]:
         return self.block_receive(
             queue_name,
             wait_time_seconds=0,
             max_number=max_number,
             header_keys=header_keys,
+            **kwargs,
         ).result()
 
     @abstractmethod
@@ -110,6 +113,6 @@ class Broker[Message](abc.ABC):
     def close(self):
         pass
 
-    def prepare_queue(self, queue_name: str, **kwds):
+    def prepare_queue(self, queue_name: str, **kwargs):
         """create the queue if not exists and prepare relevant resources if necessary"""
         pass
