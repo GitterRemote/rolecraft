@@ -14,7 +14,7 @@ class QueueAndNameKeys(TypedDict, total=False):
 
 
 class QueueBuildOptions(TypedDict, total=False):
-    prepare: bool
+    ensure_queue: bool
 
 
 class QueueBuilder:
@@ -65,8 +65,7 @@ class QueueBuilder:
         self, raw_queue: MessageQueue, queue_config: QueueConfig
     ) -> MessageQueue:
         wrapped = self._wrap(raw_queue, queue_config.middlewares)
-        if self.options.get("prepare", False):
-            wrapped.prepare()
+        wrapped.prepare(ensure=self.options.get("ensure_queue", False))
         return wrapped
 
     def _wrap(

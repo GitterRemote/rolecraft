@@ -113,8 +113,13 @@ class Broker[Message](abc.ABC):
     def close(self):
         pass
 
-    def prepare_queue(self, queue_name: str, **kwargs):
-        """Prepare the queue for a long running process.
+    def prepare_queue(
+        self, queue_name: str, *, ensure: bool = False, **kwargs
+    ):
+        """Prepare the queue for a long-running process, addressing potential thread race conditions on the resources before consuming. Each queue will be prepared before its usage.
 
         Create the queue if not exists and prepare relevant resources if necessary.
+
+        Arguments:
+            ensure (bool): If it is true, then the method has to initialize a connection to the backend, check if the queue exists, and ensure its existence.
         """
