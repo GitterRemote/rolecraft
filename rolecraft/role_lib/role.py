@@ -1,3 +1,4 @@
+import typing
 from collections.abc import Callable
 from typing import Unpack
 
@@ -81,6 +82,7 @@ class Role[**P, R, D: SerializedData]:
     def dispatch_message(self, *args: P.args, **kwds: P.kwargs) -> Message:
         return self.dispatch_message_ext(args, kwds)
 
+    @typing.overload
     def dispatch_message_ext(
         self,
         args: tuple = (),
@@ -89,8 +91,29 @@ class Role[**P, R, D: SerializedData]:
         raw_queue: MessageQueue | None = None,
         **options: Unpack[DiaptchMessageOptions],
     ) -> Message:
+        ...
+
+    @typing.overload
+    def dispatch_message_ext(
+        self,
+        args: tuple = (),
+        kwds: dict | None = None,
+        *,
+        raw_queue: MessageQueue | None = None,
+        **options,
+    ) -> Message:
+        ...
+
+    def dispatch_message_ext(
+        self,
+        args: tuple = (),
+        kwds: dict | None = None,
+        *,
+        raw_queue: MessageQueue | None = None,
+        **options,
+    ) -> Message:
         defaults = self.options.copy()
-        defaults.update(options)
+        defaults.update(options)  # type: ignore
         options = defaults
 
         if raw_queue:
