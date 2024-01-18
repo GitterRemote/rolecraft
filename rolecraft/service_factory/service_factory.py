@@ -69,6 +69,7 @@ class ServiceFactory:
             queue_options.update(
                 **self.queue_discovery(config_store=config_store)
             )
+        queue_options.setdefault("prepare", True)
 
         queues = self.queue_factory.build_queues(
             config_fetcher=config_store.fetcher if config_store else None,
