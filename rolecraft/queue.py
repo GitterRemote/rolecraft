@@ -1,10 +1,9 @@
 import abc
 import functools
-import typing
 from collections.abc import Callable, Mapping
 from typing import Any, Concatenate
 
-from rolecraft.broker import Broker, EnqueueOptions, ReceiveFuture
+from rolecraft.broker import Broker, EnqueueOptions
 from rolecraft.encoder import Encoder
 from rolecraft.message import Message
 
@@ -70,16 +69,9 @@ class MessageQueue[RawMessage](abc.ABC):
         queue."""
         kwargs.setdefault("wait_time_seconds", self.wait_time_seconds)
         future = self.broker.block_receive(self.name, *args, **kwargs)
-        return self._wrap_future(future)
-
-    def _wrap_future(
-        self, future: ReceiveFuture[RawMessage]
-    ) -> ReceiveFuture[Message]:
-        result_fn = future.result
-        future.result = lambda: [  # type: ignore
-            self.encoder.decode(m, queue=self) for m in result_fn()
-        ]
-        return typing.cast(ReceiveFuture[Message], future)
+        return future.transform(
+            lambda msgs: [self.encoder.decode(m, queue=self) for m in msgs]
+        )
 
     @copy_method_signature(Broker[Message].receive)
     def receive(self, *args, **kwargs):
