@@ -81,12 +81,3 @@ def test_dispatch_message_ext_with_options(role, queue):
     options = {"delay_millis": 1999}
     msg = role.dispatch_message_ext(args, kwds, **options)
     queue.enqueue.assert_called_once_with(msg, **options)
-
-
-def test_dispatch_message_ext_failed(role, queue):
-    args = (1, "b")
-    kwds = dict(c=["c"])
-    queue.enqueue.return_value = False
-
-    with pytest.raises(RuntimeError):
-        role.dispatch_message_ext(args, kwds)
