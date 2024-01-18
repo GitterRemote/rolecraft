@@ -83,8 +83,8 @@ class Role[**P, R, D: SerializedData]:
 
     def dispatch_message_ext(
         self,
-        args: tuple,
-        kwds: dict,
+        args: tuple = (),
+        kwds: dict | None = None,
         *,
         raw_queue: MessageQueue | None = None,
         **options: Unpack[DiaptchMessageOptions],
@@ -104,7 +104,7 @@ class Role[**P, R, D: SerializedData]:
                 queue_name=queue_name, **queue_configs
             )
 
-        message = self._build_message(queue, *args, **kwds)
+        message = self._build_message(queue, *args, **kwds or {})
         if not message.enqueue(**options):
             raise RuntimeError(
                 f"Dispatch message error: enqueue error for {message}"
