@@ -105,10 +105,7 @@ class Role[**P, R, D: SerializedData]:
             )
 
         message = self._build_message(queue, *args, **kwds or {})
-        if not message.enqueue(**options):
-            raise RuntimeError(
-                f"Dispatch message error: enqueue error for {message}"
-            )
+        message.enqueue(**options)
         return message
 
     def _build_message(
