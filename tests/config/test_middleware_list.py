@@ -3,7 +3,7 @@ from unittest import mock
 
 import pytest
 
-from rolecraft import middleware
+from rolecraft.config import middleware_list as middleware
 
 
 @pytest.fixture()

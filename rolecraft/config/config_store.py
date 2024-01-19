@@ -5,12 +5,11 @@ from collections.abc import Mapping
 from typing import Any, Unpack
 
 from rolecraft.broker import Broker
+from rolecraft.queue_config import IncompleteQueueConfig, QueueConfig
 from rolecraft.queue_factory.config_fetcher import (
     ConfigFetcher,
     QueueConfigOptions,
 )
-
-from .queue_config import IncompleteQueueConfig, QueueConfig
 
 
 class IncompleteConfigError(Exception):
@@ -117,10 +116,10 @@ class SimpleConfigStore(ConfigStore, ConfigFetcher):
             ).get(queue_name):
                 return config
 
-        if isinstance(self.queue_config, IncompleteQueueConfig):
+        if not isinstance(self.queue_config, QueueConfig):
             if not broker:
                 raise IncompleteConfigError()
 
-            return self.queue_config.replace(broker=broker).to_queue_config()
+            return QueueConfig.create_from(self.queue_config, broker)
 
         return self.queue_config

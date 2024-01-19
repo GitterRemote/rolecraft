@@ -3,8 +3,7 @@ import functools
 import typing
 from collections.abc import Iterable, MutableSequence, Sequence
 
-from .middleware import Middleware
-from .retryable import Retryable
+from rolecraft.middleware import Middleware, Retryable
 
 M = Middleware
 

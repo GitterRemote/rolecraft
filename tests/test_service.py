@@ -164,7 +164,7 @@ def test_dispatch_messages_with_role_bound_broker(create_service, broker2):
 
 
 def test_dispatch_messages_fail_retry(config, create_service):
-    config.queue_config.middlewares.retryable.max_backoff_millis = 0
+    config.default.middlewares.retryable.max_backoff_millis = 0
     config.inject()
 
     rv = []
@@ -185,8 +185,8 @@ def test_dispatch_messages_hard_fail(config, create_service):
     class HardFailureError(Exception):
         ...
 
-    config.queue_config.middlewares.retryable.max_backoff_millis = 0
-    config.queue_config.middlewares.retryable.raises = HardFailureError
+    config.default.middlewares.retryable.max_backoff_millis = 0
+    config.default.middlewares.retryable.raises = HardFailureError
     config.inject()
 
     rv = []

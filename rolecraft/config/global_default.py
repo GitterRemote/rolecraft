@@ -1,7 +1,7 @@
 from typing import Any
 
 from . import config_store as _config_store
-from . import queue_config as _queue_config
+from . import default_queue_config as _default_queue_config
 from .config_store import ConfigFetcher, ConfigStore
 
 
@@ -45,7 +45,7 @@ class GlobalDefault:
 
     def get_or_default(self) -> ConfigStore:
         return self.get() or _config_store.SimpleConfigStore(
-            queue_config=_queue_config.IncompleteQueueConfig.default()
+            queue_config=_default_queue_config.DefaultQueueConfig()
         )
 
     def get_future(self) -> ConfigStore:

@@ -1,3 +1,4 @@
+import dataclasses
 from unittest import mock
 
 import pytest
@@ -7,6 +8,13 @@ from rolecraft.config import config_store as config_store_mod
 IncompleteConfigError = config_store_mod.IncompleteConfigError
 
 DefaultConfigStore = config_store_mod.SimpleConfigStore
+
+
+def assert_queue_config_eq(incomplete_queue_config, queue_config):
+    for field in dataclasses.fields(incomplete_queue_config):
+        assert getattr(incomplete_queue_config, field.name) == getattr(
+            queue_config, field.name
+        ), field.name
 
 
 class TestEmptyStore:
@@ -26,18 +34,17 @@ class TestEmptyStore:
         config = store(broker=broker)
 
         assert config.broker is broker
-        assert (
-            store.queue_config.replace(broker=broker).to_queue_config()
-            == config
+
+        assert_queue_config_eq(
+            store.queue_config.replace(broker=broker), config
         )
 
     def test_fetch_queue_config_with_queue_and_broker(self, store, broker):
         config = store("any_queue_name", broker=broker)
 
         assert config.broker is broker
-        assert (
-            store.queue_config.replace(broker=broker).to_queue_config()
-            == config
+        assert_queue_config_eq(
+            store.queue_config.replace(broker=broker), config
         )
 
     def test_fetch_queue_config_with_encoder(self, store, encoder):
@@ -54,11 +61,9 @@ class TestEmptyStore:
 
         assert config.encoder is encoder
         assert config.broker is broker
-        assert (
-            store.queue_config.replace(
-                broker=broker, encoder=encoder
-            ).to_queue_config()
-            == config
+
+        assert_queue_config_eq(
+            store.queue_config.replace(broker=broker, encoder=encoder), config
         )
 
     def test_fetch_queue_config_with_middlewares(self, store, middlewares):
@@ -72,11 +77,10 @@ class TestEmptyStore:
 
         assert config.middlewares is middlewares
         assert config.broker is broker
-        assert (
-            store.queue_config.replace(
-                broker=broker, middlewares=middlewares
-            ).to_queue_config()
-            == config
+
+        assert_queue_config_eq(
+            store.queue_config.replace(broker=broker, middlewares=middlewares),
+            config,
         )
 
 
