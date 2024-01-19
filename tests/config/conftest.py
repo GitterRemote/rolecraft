@@ -1,6 +1,8 @@
-import pytest
 from unittest import mock
-from rolecraft.config import queue_config as queue_config_mod
+
+import pytest
+
+from rolecraft import queue_config as queue_config_mod
 from rolecraft.config import config_store as config_store_mod
 
 DefaultConfigStore = config_store_mod.SimpleConfigStore
