@@ -1,7 +1,6 @@
 import dataclasses
-import typing
 from collections.abc import Mapping, Sequence
-from typing import Any, Self, TypedDict, TypeVar, Unpack
+from typing import Any, TypedDict, TypeVar, Unpack
 
 from rolecraft.broker import Broker
 from rolecraft.encoder import Encoder
