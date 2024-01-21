@@ -7,7 +7,7 @@ from .error import (
     QueueNotFound,
     RecoverableError,
 )
-from .raw_message import BytesRawMessage, HeaderBytesRawMessage
+from .raw_message import BytesRawMessage, HeaderBytesRawMessage, RawMessage
 from .stub_broker import StubBroker
 
 __all__ = [
@@ -23,4 +23,5 @@ __all__ = [
     "MessageNotFound",
     "BaseBroker",
     "QueueNotFound",
+    "RawMessage",
 ]

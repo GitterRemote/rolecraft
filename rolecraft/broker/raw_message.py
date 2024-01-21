@@ -3,7 +3,12 @@ from typing import Self
 
 
 @dataclasses.dataclass(kw_only=True)
-class BytesRawMessage:
+class RawMessage:
+    id: str = ""
+
+
+@dataclasses.dataclass(kw_only=True)
+class BytesRawMessage(RawMessage):
     id: str = ""
     data: bytes
 
