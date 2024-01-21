@@ -2,7 +2,7 @@ from unittest import mock
 
 import pytest
 
-from rolecraft import middleware as middleware_mod
+from rolecraft import middlewares as middlewares_mod
 from rolecraft.queue_factory import queue_builder as queue_builder_mod
 
 
@@ -41,7 +41,7 @@ def test_build_queue_with_cache(queue_factory, broker2, encoder2):
             queue_name="queue1",
             broker=broker2,
             encoder=encoder2,
-            middlewares=[middleware_mod.Retryable()],
+            middlewares=[middlewares_mod.Retryable()],
         )
         assert queue
         assert build_method.call_count == 1
@@ -49,7 +49,7 @@ def test_build_queue_with_cache(queue_factory, broker2, encoder2):
             queue_name="queue1",
             broker=broker2,
             encoder=encoder2,
-            middlewares=[middleware_mod.Retryable()],
+            middlewares=[middlewares_mod.Retryable()],
         )
         assert queue2 is queue
         assert build_method.call_count == 1

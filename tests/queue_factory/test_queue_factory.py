@@ -1,6 +1,7 @@
 import pytest
 
-from rolecraft import middleware as middleware_mod
+from rolecraft import middlewares as middlewares_mod
+from rolecraft.middleware import Middleware
 from rolecraft.queue_factory import queue_factory as queue_factory_mod
 
 
@@ -37,9 +38,9 @@ def test_build_queue_with_middlewares(queue_factory, broker2, encoder2):
         queue_name="queue1",
         broker=broker2,
         encoder=encoder2,
-        middlewares=[middleware_mod.Retryable()],
+        middlewares=[middlewares_mod.Retryable()],
     )
-    assert isinstance(queue, middleware_mod.Middleware)
+    assert isinstance(queue, Middleware)
     assert queue.name == "queue1"
     assert queue.broker is broker2
     assert queue.encoder is encoder2
