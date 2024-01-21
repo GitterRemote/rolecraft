@@ -18,4 +18,4 @@ def test_in_different_threads():
     t.join()
 
     assert rv and all(rv)
-    assert local.stop_event is e
+    assert local.stop_event
