@@ -4,6 +4,7 @@ from rolecraft.config import ConfigStore
 from rolecraft.config import ConfigurableConfig as Config
 from rolecraft.role_lib import RoleDecorator
 from rolecraft.service_factory import ServiceCreateOptions, ServiceFactory
+from rolecraft.thread_local import InterruptError, InterruptEvent
 
 role = RoleDecorator()
 local = _thread_local.thread_local
@@ -17,4 +18,6 @@ __all__ = [
     "Config",
     "local",
     "ServiceCreateOptions",
+    "InterruptError",
+    "InterruptEvent",
 ]
