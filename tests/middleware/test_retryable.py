@@ -3,7 +3,7 @@ from unittest import mock
 import pytest
 
 from rolecraft import message as message_mod
-from rolecraft import middleware as middleware_mod
+from rolecraft import middlewares as middlewares_mod
 from rolecraft import queue as queue_mod
 
 
@@ -23,7 +23,7 @@ def queue():
 
 @pytest.fixture()
 def retryable(queue):
-    return middleware_mod.Retryable(queue)
+    return middlewares_mod.Retryable(queue)
 
 
 @pytest.fixture()
