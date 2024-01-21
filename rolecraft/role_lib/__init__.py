@@ -3,6 +3,7 @@ from .error import (
     CraftError,
     DeserializeError,
     DispatchError,
+    InterruptError,
     RoleError,
     SerializeError,
     UnmatchedQueueNameError,
@@ -23,4 +24,5 @@ __all__ = [
     "UnmatchedQueueNameError",
     "DispatchError",
     "RoleError",
+    "InterruptError",
 ]

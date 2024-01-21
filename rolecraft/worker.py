@@ -1,11 +1,9 @@
 import logging
 import threading
 
-from rolecraft.thread_local import InterruptError
-
 from .consumer import Consumer
 from .message import Message
-from .role_lib import ActionError, RoleHanger
+from .role_lib import InterruptError, RoleHanger
 from .worker_pool import ThreadWorkerPool, WorkerPool
 
 logger = logging.getLogger(__name__)
@@ -64,12 +62,9 @@ class Worker:
     def _handle(self, message: Message):
         try:
             result = self._craft(message)
-        except ActionError as e:
-            if isinstance(e.__cause__, InterruptError):
-                # when a long-running function is interrupted by the stop event
-                self._handle_interrupt(message)
-            else:
-                self._handle_error(message, e)
+        except InterruptError:
+            # when a long-running function is interrupted by the stop event
+            self._handle_interrupt(message)
         except Exception as e:
             self._handle_error(message, e)
         else:
