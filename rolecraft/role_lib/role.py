@@ -121,7 +121,7 @@ class Role[**P, R, D: SerializedData]:
             queue_configs = _typed_dict.subset_dict(
                 updated_options, QueueConfigOptions
             )
-            queue_name = options.pop("queue_name", "default")
+            queue_name = updated_options.pop("queue_name", "default")
             queue = self.queue_factory.build_queue(
                 queue_name=queue_name, **queue_configs
             )
