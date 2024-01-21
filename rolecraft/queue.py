@@ -1,13 +1,16 @@
 import abc
 import functools
+import logging
 from collections.abc import Callable, Mapping
 from typing import Any, Concatenate
 
-from rolecraft.broker import Broker, EnqueueOptions
+from rolecraft.broker import Broker, EnqueueOptions, RawMessage
 from rolecraft.encoder import Encoder
 from rolecraft.message import Message
 
 __all__ = ["MessageQueue", "EnqueueOptions"]
+
+logger = logging.getLogger(__name__)
 
 
 # refer to:
@@ -43,7 +46,7 @@ def copy_msg_method_signature[CLS, **P, T](
     return wrapper
 
 
-class MessageQueue[RawMessage](abc.ABC):
+class MessageQueue[RawMessage: RawMessage](abc.ABC):
     def __init__(
         self,
         name: str,
@@ -69,14 +72,24 @@ class MessageQueue[RawMessage](abc.ABC):
         queue."""
         kwargs.setdefault("wait_time_seconds", self.wait_time_seconds)
         future = self.broker.block_receive(self.name, *args, **kwargs)
-        return future.transform(
-            lambda msgs: [self.encoder.decode(m, queue=self) for m in msgs]
-        )
+        return future.transform(self._decode_messages)
 
     @copy_method_signature(Broker[Message].receive)
     def receive(self, *args, **kwargs):
-        msgs = self.broker.receive(self.name, *args, **kwargs)
-        return [self.encoder.decode(m, queue=self) for m in msgs]
+        return self._decode_messages(
+            self.broker.receive(self.name, *args, **kwargs)
+        )
+
+    def _decode_messages(self, messages: list[RawMessage]) -> list[Message]:
+        decoded = []
+        for msg in messages:
+            try:
+                decoded.append(self.encoder.decode(msg, queue=self))
+            except Exception as e:
+                logger.error(
+                    "Decode error for message with ID %s", msg.id, exc_info=e
+                )
+        return decoded
 
     @copy_method_signature(Broker[Message].qsize)
     def qsize(self, *args, **kwargs):
