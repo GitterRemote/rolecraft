@@ -64,6 +64,8 @@ class Role[**P, R, D: SerializedData]:
 
         try:
             return self(*args, **kwargs)
+        except _error.ActionError:
+            raise
         except Exception as e:
             raise _error.ActionError from e
 
