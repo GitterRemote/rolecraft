@@ -65,7 +65,7 @@ class Worker:
         try:
             result = self._craft(message)
         except ActionError as e:
-            if isinstance(ActionError.__cause__, InterruptError):
+            if isinstance(e.__cause__, InterruptError):
                 # when a long-running function is interrupted by the stop event
                 self._handle_interrupt(message)
             else:
