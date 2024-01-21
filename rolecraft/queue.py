@@ -76,7 +76,7 @@ class MessageQueue[RawMessage](abc.ABC):
     @copy_method_signature(Broker[Message].receive)
     def receive(self, *args, **kwargs):
         msgs = self.broker.receive(self.name, *args, **kwargs)
-        return [self.encoder.decode(m) for m in msgs]
+        return [self.encoder.decode(m, queue=self) for m in msgs]
 
     @copy_method_signature(Broker[Message].qsize)
     def qsize(self, *args, **kwargs):
