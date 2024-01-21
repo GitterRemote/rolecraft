@@ -3,9 +3,9 @@ from collections.abc import Callable, Sequence
 from typing import TypedDict, Unpack
 
 from rolecraft.message import Message
+from rolecraft.middleware import Middleware
 from rolecraft.queue import MessageQueue
-
-from .middleware import Middleware
+from rolecraft.role_lib import ActionError
 
 
 class RetryableOptions(TypedDict, total=False):
@@ -59,7 +59,13 @@ class Retryable(Middleware):
     def _should_retry(
         self, message: Message, exception: Exception, retry_attempt: int
     ) -> bool:
-        if self.raises and isinstance(exception, self.raises):
+        if self.raises and (
+            (
+                isinstance(exception, ActionError)
+                and isinstance(exception.__cause__, self.raises)
+            )
+            or isinstance(exception, self.raises)
+        ):
             return False
 
         if should_retry := self.should_retry:
