@@ -4,7 +4,7 @@ import logging
 from collections.abc import Callable, Mapping
 from typing import Any, Concatenate
 
-from rolecraft.broker import Broker, EnqueueOptions, RawMessage
+from rolecraft.broker import Broker, EnqueueOptions
 from rolecraft.encoder import Encoder
 from rolecraft.message import Message
 
@@ -46,7 +46,7 @@ def copy_msg_method_signature[CLS, **P, T](
     return wrapper
 
 
-class MessageQueue[RawMessage: RawMessage](abc.ABC):
+class MessageQueue[RawMessage](abc.ABC):
     def __init__(
         self,
         name: str,
@@ -87,7 +87,9 @@ class MessageQueue[RawMessage: RawMessage](abc.ABC):
                 decoded.append(self.encoder.decode(msg, queue=self))
             except Exception as e:
                 logger.error(
-                    "Decode error for message with ID %s", msg.id, exc_info=e
+                    "Decode error for message %s",
+                    getattr(msg, "id", msg),
+                    exc_info=e,
                 )
         return decoded
 
