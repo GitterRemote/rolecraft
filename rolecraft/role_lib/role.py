@@ -7,25 +7,16 @@ from rolecraft.queue import EnqueueOptions, MessageQueue
 from rolecraft.queue_factory import QueueConfigOptions, QueueFactory
 from rolecraft.utils import typed_dict as _typed_dict
 
+from . import error as _error
 from .serializer import ParamsSerializerType, SerializedData
-
-
-class CraftError(Exception):
-    def __init__(self, message: Message, *args: object) -> None:
-        self.message = message
-        super().__init__(*args)
-
-
-class UnmatchedQueueNameError(CraftError):
-    ...
 
 
 class RoleDefaultOptions(QueueConfigOptions, EnqueueOptions, total=False):
     queue_name: str
 
 
-class DiaptchMessageOptions(QueueConfigOptions, EnqueueOptions, total=False):
-    queue_name: str
+class DiaptchMessageOptions(RoleDefaultOptions, total=False):
+    ...
 
 
 class Role[**P, R, D: SerializedData]:
@@ -64,20 +55,27 @@ class Role[**P, R, D: SerializedData]:
             "queue_name" in self.options
             and message.queue.name != self.options["queue_name"]
         ):
-            raise UnmatchedQueueNameError(message)
-        return self._craft(message.role_data)
+            raise _error.UnmatchedQueueNameError
 
-    def _craft(self, data: SerializedData | D) -> R:
+        try:
+            args, kwargs = self._deserialize(message.role_data)
+        except Exception as e:
+            raise _error.DeserializeError from e
+
+        try:
+            return self(*args, **kwargs)
+        except Exception as e:
+            raise _error.ActionError from e
+
+    def _deserialize(self, data: SerializedData) -> tuple[tuple, dict]:
         if not data:
-            return self()
-
+            return (), {}
         if self.deserializer:
-            args, kwargs = self.deserializer.deserialize(self.fn, data)
+            return self.deserializer.deserialize(self.fn, data)
         elif self.serializer.support(data):
-            args, kwargs = self.serializer.deserialize(self.fn, data)
+            return self.serializer.deserialize(self.fn, data)
         else:
             raise RuntimeError("Unsupported data type")
-        return self(*args, **kwargs)
 
     def dispatch_message(self, *args: P.args, **kwds: P.kwargs) -> Message:
         return self.dispatch_message_ext(args, kwds)
@@ -112,15 +110,14 @@ class Role[**P, R, D: SerializedData]:
         raw_queue: MessageQueue | None = None,
         **options,
     ) -> Message:
-        defaults = self.options.copy()
-        defaults.update(options)  # type: ignore
-        options = defaults
+        updated_options = self.options.copy()
+        updated_options.update(options)  # type: ignore
 
         if raw_queue:
             queue = self.queue_factory.build_queue(raw_queue=raw_queue)
         else:
             queue_configs = _typed_dict.subset_dict(
-                options, QueueConfigOptions
+                updated_options, QueueConfigOptions
             )
             queue_name = options.pop("queue_name", "default")
             queue = self.queue_factory.build_queue(
@@ -128,11 +125,15 @@ class Role[**P, R, D: SerializedData]:
             )
 
         message = self._build_message(queue, *args, **kwds or {})
-        message.enqueue(**options)
+        message.enqueue(**updated_options)
         return message
 
     def _build_message(
         self, queue: MessageQueue, *args: P.args, **kwds: P.kwargs
     ) -> Message:
-        data = self.serializer.serialize(self.fn, args, kwds)
+        try:
+            data = self.serializer.serialize(self.fn, args, kwds)
+        except Exception as e:
+            raise _error.SerializeError from e
+
         return Message(role_name=self.name, role_data=data, queue=queue)
