@@ -1,6 +1,8 @@
 import logging
 import threading
 
+from rolecraft.thread_local import InterruptError
+
 from .consumer import Consumer
 from .message import Message
 from .role_lib import RoleHanger
@@ -62,6 +64,9 @@ class Worker:
     def _handle(self, message: Message):
         try:
             result = self._craft(message)
+        except InterruptError:
+            # when a long-running function is interrupted by the stop event
+            self._handle_interrupt(message)
         except Exception as e:
             self._handle_error(message, e)
         else:
@@ -74,29 +79,41 @@ class Worker:
         return role.craft(message)
 
     def _handle_leftover(self, message: Message):
-        logger.warning(
-            "requeuing leftover message as worker stopped: %s",
-            message.id,
+        self._requeue(
+            message,
+            warning_log="Requeuing leftover message as the worker stopped: %s",
+            error_log="Failed to requeue leftover message with ID: %s",
         )
+
+    def _handle_interrupt(self, message: Message):
+        self._requeue(
+            message,
+            warning_log="Requeuing messages due to worker interruption: %s",
+            error_log="Failed to requeue message with ID: %s",
+        )
+
+    def _requeue(self, message: Message, warning_log: str, error_log: str):
+        logger.warning(warning_log, message.id)
         try:
             message.requeue()
         except Exception as e:
-            logger.error(
-                "requeuing leftover message failed: %s",
-                message.id,
-                exc_info=e,
-            )
+            logger.error(error_log, message.id, exc_info=e)
 
     def _handle_error(
         self,
         message: Message,
         exception: Exception,
     ):
+        logger.error(
+            "Error handling message with ID: %s",
+            message.id,
+            exc_info=exception,
+        )
         try:
             message.nack(exception=exception)
         except Exception as e:
             logger.error(
-                "nack message failed: %s",
+                "Failed to nack message with ID: %s",
                 message.id,
                 exc_info=e,
             )
@@ -110,7 +127,7 @@ class Worker:
             message.ack(result=result)
         except Exception as e:
             logger.error(
-                "ack message failed: %s",
+                "Failed to ack message with ID: %s",
                 message.id,
                 exc_info=e,
             )
