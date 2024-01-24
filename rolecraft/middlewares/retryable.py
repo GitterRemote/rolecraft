@@ -60,12 +60,12 @@ class Retryable(BaseMiddleware):
     def _should_retry(
         self, message: Message, exception: Exception, retry_attempt: int
     ) -> bool:
-        if self.raises and (
-            (
-                isinstance(exception, ActionError)
-                and isinstance(exception.__cause__, self.raises)
+        if not isinstance(exception, ActionError) or (
+            self.raises
+            and (
+                isinstance(exception.__cause__, self.raises)
+                or isinstance(exception, self.raises)
             )
-            or isinstance(exception, self.raises)
         ):
             return False
 

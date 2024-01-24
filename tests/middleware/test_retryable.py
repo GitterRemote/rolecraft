@@ -5,6 +5,7 @@ import pytest
 from rolecraft import message as message_mod
 from rolecraft import middlewares as middlewares_mod
 from rolecraft import queue as queue_mod
+from rolecraft.role_lib import ActionError
 
 
 @pytest.fixture()
@@ -34,9 +35,12 @@ def message():
     return msg
 
 
-def test_retry(retryable, queue, message):
-    exc = Exception()
+@pytest.fixture()
+def exc():
+    return ActionError()
 
+
+def test_retry(retryable, queue, message, exc):
     assert retryable.nack(message=message, exception=exc) is True
     queue.retry.assert_called_once_with(
         message, delay_millis=retryable.base_backoff_millis, exception=exc
@@ -59,33 +63,35 @@ def test_retry(retryable, queue, message):
     queue.nack.assert_called_once_with(message, exception=exc)
 
 
-def test_max_backoff_millis(retryable, queue, message):
+def test_max_backoff_millis(retryable, queue, message, exc):
     retryable.max_backoff_millis = 1000
 
-    assert retryable.nack(message=message, exception=Exception()) is True
+    assert retryable.nack(message=message, exception=exc) is True
     queue.retry.assert_called()
     delay_millis = queue.retry.call_args.kwargs.get("delay_millis")
     assert delay_millis == 1000
 
 
-def test_should_retry(retryable, queue, message):
+def test_should_retry(retryable, queue, message, exc):
     rv = False
-    error = Exception()
 
-    def should_retry(msg, exc, retries):
+    def should_retry(msg, error, retries):
         nonlocal rv
-        rv = msg is message and exc is error and retries == 0
+        rv = msg is message and error is exc and retries == 0
         return False
 
     retryable.should_retry = should_retry
 
-    assert retryable.nack(message=message, exception=error) is True
-    queue.nack.assert_called_once_with(message, exception=error)
+    assert retryable.nack(message=message, exception=exc) is True
+    queue.nack.assert_called_once_with(message, exception=exc)
     assert rv is True
 
 
 def test_raises(retryable, queue, message):
-    class MyError(Exception):
+    class MyError(ActionError):
+        ...
+
+    class OtherError(ActionError):
         ...
 
     retryable.raises = (MyError,)
@@ -93,5 +99,5 @@ def test_raises(retryable, queue, message):
     assert retryable.nack(message=message, exception=MyError()) is True
     queue.nack.assert_called()
 
-    assert retryable.nack(message=message, exception=Exception()) is True
+    assert retryable.nack(message=message, exception=OtherError()) is True
     queue.retry.assert_called()
