@@ -4,7 +4,7 @@ import typing
 from collections.abc import Iterable, MutableSequence, Sequence
 
 from rolecraft.middleware import Middleware
-from rolecraft.middlewares import Retryable
+from rolecraft.middlewares import QueueRecoverable, Retryable
 
 M = Middleware
 
@@ -15,6 +15,7 @@ class MiddlewareList(MutableSequence[M]):
 
     _middlewares: list[M]
     retryable: Retryable | None = None
+    queue_recoverable: QueueRecoverable | None = None
 
     def __init__(self, middlewares: Sequence[M] = ()):
         self._set_field("_middlewares", [])
@@ -42,6 +43,8 @@ class MiddlewareList(MutableSequence[M]):
     def name_for(self, middleware: M) -> str | None:
         if isinstance(middleware, Retryable):
             return "retryable"
+        elif isinstance(middleware, QueueRecoverable):
+            return "queue_recoverable"
         return None
 
     def _remove_middleware_by_name(self, name: str):
