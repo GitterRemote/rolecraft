@@ -4,22 +4,18 @@ import pytest
 
 from rolecraft import message as message_mod
 from rolecraft import middlewares as middlewares_mod
-from rolecraft import queue as queue_mod
 from rolecraft.role_lib import ActionError
 
 
 @pytest.fixture()
-def queue():
-    q = mock.MagicMock(queue_mod.MessageQueue)
-    q.name = "MockedQueue"
-
+def queue(queue):
     def retry(message, *args, **kwargs):
         message.meta.retries = (message.meta.retries or 0) + 1
         return True
 
-    q.retry.side_effect = retry
-    q.nack.return_value = True
-    return q
+    queue.retry.side_effect = retry
+    queue.nack.return_value = True
+    return queue
 
 
 @pytest.fixture()
