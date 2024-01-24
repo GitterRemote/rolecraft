@@ -2,7 +2,7 @@ from unittest import mock
 
 import pytest
 
-from rolecraft import middleware as middleware_mod
+from rolecraft import middlewares as middlewares_mod
 from rolecraft import queue as queue_mod
 from rolecraft.queue import MessageQueue
 
@@ -16,7 +16,7 @@ def queue():
 
 @pytest.fixture()
 def middleware():
-    class M(middleware_mod.Middleware):
+    class M(middlewares_mod.BaseMiddleware):
         def __init__(
             self,
             queue: MessageQueue | None = None,

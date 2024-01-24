@@ -3,9 +3,10 @@ from collections.abc import Callable, Sequence
 from typing import TypedDict, Unpack
 
 from rolecraft.message import Message
-from rolecraft.middleware import Middleware
 from rolecraft.queue import MessageQueue
 from rolecraft.role_lib import ActionError
+
+from .base_middleware import BaseMiddleware
 
 
 class RetryableOptions(TypedDict, total=False):
@@ -19,7 +20,7 @@ class RetryableOptions(TypedDict, total=False):
     raises: Sequence[type[Exception]] | type[Exception]
 
 
-class Retryable(Middleware):
+class Retryable(BaseMiddleware):
     _BASE_BACKOFF_MILLIS = 5 * 60 * 1000
     _MAX_BACKOFF_MILLIS = 366 * 24 * 60 * 60 * 1000
 
@@ -74,14 +75,15 @@ class Retryable(Middleware):
         return retry_attempt < self.max_retries
 
     def nack(self, message: Message, exception: Exception, **kwargs):
-        assert self.queue, "Middleware Retryable is not initialized"
         retries = message.meta.retries or 0
 
         if not self._should_retry(message, exception, retries):
-            return self.queue.nack(message, exception=exception, **kwargs)
+            return self._guarded_queue.nack(
+                message, exception=exception, **kwargs
+            )
 
         delay_millis = int(self._compute_delay_millis(retries))
-        return self.queue.retry(
+        return self._guarded_queue.retry(
             message, delay_millis=delay_millis, exception=exception
         )
 
