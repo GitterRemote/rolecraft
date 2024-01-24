@@ -1,7 +1,8 @@
-from rolecraft.middlewares import queue_recoverable as queue_recoverable_mod
 import pytest
+
 from rolecraft.broker import RecoverableError
 from rolecraft.message import Message
+from rolecraft.middlewares import queue_recoverable as queue_recoverable_mod
 
 
 @pytest.fixture()
@@ -19,7 +20,7 @@ def new_message(queue):
     return _new_message
 
 
-def test_retry_recoverable_error(queue, middleware, new_message):
+def test_recoverable_error_for_receive(queue, middleware, new_message):
     msgs = [new_message(), new_message()]
     queue.receive.side_effect = [RecoverableError, msgs]
     assert callable(queue.receive)
@@ -27,3 +28,15 @@ def test_retry_recoverable_error(queue, middleware, new_message):
     rv = middleware.receive()
     assert rv == msgs
     assert queue.receive.call_count == 2
+
+
+def test_recoverable_error_for_ack():
+    ...
+
+
+def test_irrecoverable_error():
+    ...
+
+
+def test_recoverable_error_exceeds_max_retries():
+    ...
