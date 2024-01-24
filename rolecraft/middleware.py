@@ -13,7 +13,7 @@ class Middleware(abc.ABC):
     def __init__(self, queue: MessageQueue | None = None) -> None:
         self.queue: MessageQueue | None = queue
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str):
         return getattr(self.queue, name)
 
     @abc.abstractmethod
