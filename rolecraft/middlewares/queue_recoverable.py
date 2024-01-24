@@ -24,11 +24,14 @@ class QueueRecoverable(BaseMiddleware):
         self, queue: MessageQueue | None = None, **options: Unpack[Options]
     ) -> None:
         super().__init__(queue)
-        self.retries = options.get("queue_retries", 3)
+        self.queue_retries = options.get("queue_retries", 3)
+
+        self.receive = self._make_recoverale(super().receive)
+        self.block_receive = self._make_recoverale(super().block_receive)
 
     @property
     def options(self):
-        return self.Options(queue_retries=self.retries)
+        return self.Options(queue_retries=self.queue_retries)
 
     def __getattr__(self, name: str):
         attr = super().__getattr__(name)
@@ -45,7 +48,7 @@ class QueueRecoverable(BaseMiddleware):
                     return fn(*args, **kwds)
                 except RecoverableError as exc:
                     tried += 1
-                    if tried > self.retries:
+                    if tried > self.queue_retries:
                         raise
                     logger.error(
                         f"{fn.__name__.upper()} error, retrying for the %i time",
