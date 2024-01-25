@@ -11,3 +11,8 @@ class ConfigFetcher(Protocol):
     ) -> QueueConfig[M]:
         """Fetches QueueConfig for a specific queue. If the queue name is None, it will return the default QueueConfig."""
         ...
+
+
+class ConfigFetcherFactory(Protocol):
+    def __call__(self) -> ConfigFetcher:
+        ...
