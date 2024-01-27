@@ -125,4 +125,4 @@ class SimpleConfigStore(ConfigStore, ConfigFetcher):
         return self.queue_config
 
 
-global_config_store: SimpleConfigStore
+global_config_store: SimpleConfigStore | None = None
