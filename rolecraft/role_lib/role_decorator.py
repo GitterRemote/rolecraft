@@ -3,9 +3,11 @@ import typing
 from collections.abc import Callable
 from typing import Unpack
 
-from rolecraft import config as _config
-from rolecraft.config import ConfigStore
-from rolecraft.queue_factory import CachedQueueFactory, QueueFactory
+from rolecraft.queue_factory import (
+    CachedQueueFactory,
+    ConfigFetcher,
+    QueueFactory,
+)
 
 from . import role_hanger as _role_hanger
 from . import serializer as _serializer
@@ -21,18 +23,21 @@ class RoleDecorator[D: SerializedData]:
         serializer: ParamsSerializerType[D] | None = None,
         deserializer: ParamsSerializerType[SerializedData] | None = None,
         queue_factory: QueueFactory | None = None,
-        config_store: ConfigStore | None = None,
+        config_fetcher: ConfigFetcher | None = None,
         role_hanger: RoleHanger | None = None,
         **options: Unpack[RoleDefaultOptions],
     ) -> None:
         self.serializer = serializer
         self.deserializer = deserializer or _serializer.hybrid_deserializer
 
-        config_store = config_store or _config.global_config.get_or_future()
-        self.queue_factory = queue_factory or CachedQueueFactory(
-            config_fetcher=config_store.fetcher
-        )
+        if not queue_factory:
+            if not config_fetcher:
+                raise ValueError(
+                    "ConfigFetcher is required if no QueueFactory is provided"
+                )
+            queue_factory = CachedQueueFactory(config_fetcher=config_fetcher)
 
+        self.queue_factory = queue_factory
         self.role_hanger = (
             role_hanger
             if role_hanger is not None
