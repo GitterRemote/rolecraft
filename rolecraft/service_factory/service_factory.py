@@ -9,7 +9,7 @@ from rolecraft import worker_pool as _worker_pool
 from rolecraft.consumer import ConsumerFactory, ConsumerOptions
 from rolecraft.queue_factory import (
     BatchBuildOptions,
-    ConfigFetcherFactory,
+    ConfigFetcher,
     QueueFactory,
 )
 from rolecraft.role_lib import RoleHanger
@@ -30,21 +30,19 @@ class ServiceFactory:
     def __init__(
         self,
         *,
-        config_fetcher_factory: ConfigFetcherFactory | None = None,
         queue_factory: QueueFactory | None = None,
+        config_fetcher: ConfigFetcher | None = None,
         queue_discovery: QueueDiscovery | None = None,
         consumer_factory: ConsumerFactory | None = None,
         worker_pool_factory: Callable[[], WorkerPool] | None = None,
         role_hanger: RoleHanger | None = None,
     ) -> None:
         if not queue_factory:
-            if not config_fetcher_factory:
+            if not config_fetcher:
                 raise ValueError(
-                    "ConfigFetcherFactory is required if no QueueFactory provided"
+                    "ConfigFetcher is required if no QueueFactory is provided"
                 )
-            queue_factory = QueueFactory(
-                config_fetcher=config_fetcher_factory()
-            )
+            queue_factory = QueueFactory(config_fetcher=config_fetcher)
 
         self.queue_factory = queue_factory
         self.consumer_factory = (
@@ -59,7 +57,7 @@ class ServiceFactory:
     def create(
         self,
         *,
-        config_fetcher_factory: ConfigFetcherFactory | None = None,
+        config_fetcher: ConfigFetcher | None = None,
         **options: Unpack[ServiceCreateOptions],
     ) -> Service:
         """Create the service with a customized configuration and defined queue names.
@@ -75,10 +73,7 @@ class ServiceFactory:
         queue_options.setdefault("ensure_queue", True)
 
         queues = self.queue_factory.build_queues(
-            config_fetcher=config_fetcher_factory()
-            if config_fetcher_factory
-            else None,
-            **queue_options,
+            config_fetcher=config_fetcher, **queue_options
         )
         consumer = self.consumer_factory(queues=queues, **consumer_options)
         worker_pool = self.worker_pool_factory()
