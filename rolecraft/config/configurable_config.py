@@ -13,7 +13,6 @@ from rolecraft.queue_config import (
 
 from . import config_store as _config_store
 from . import default_queue_config as _default_queue_config
-from . import global_default as _global_default
 from .config_store import ConfigStore
 from .middleware_list import MiddlewareList
 
@@ -155,7 +154,7 @@ class InjectableConfig[Q: QueueConfig[Any] | IncompleteQueueConfig[Any]]:
 
     def inject(self):
         """Inject into the global config store."""
-        _global_default.global_default.set(self.create_config_store())
+        _config_store.global_config_store = self.create_config_store()
 
     def create_config_store(self) -> ConfigStore:
         broker_queue_config = {
