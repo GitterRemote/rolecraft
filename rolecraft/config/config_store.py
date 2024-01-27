@@ -123,3 +123,6 @@ class SimpleConfigStore(ConfigStore, ConfigFetcher):
             return QueueConfig.create_from(self.queue_config, broker)
 
         return self.queue_config
+
+
+global_config_store: SimpleConfigStore
