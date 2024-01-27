@@ -1,5 +1,5 @@
 from .cached_queue_factory import CachedQueueFactory
-from .config_fetcher import ConfigFetcher, ConfigFetcherFactory
+from .config_fetcher import ConfigFetcher
 from .queue_builder import (
     QueueAndNameKeys,
     QueueBuildOptions,
@@ -15,5 +15,4 @@ __all__ = [
     "QueueAndNameKeys",
     "CachedQueueFactory",
     "ConfigFetcher",
-    "ConfigFetcherFactory",
 ]
