@@ -16,7 +16,7 @@ class RetryableOptions(TypedDict, total=False):
     exponential_factor: float  # Exponential factor for backoff calculation
     jitter_range: float  # Random jitter range as a percentage of the base backoff time
 
-    should_retry: Callable[[Message, Exception, int], bool] | None
+    should_retry: Callable[[Exception, int, Message], bool] | None
     raises: Sequence[type[Exception]] | type[Exception]
 
 
@@ -60,17 +60,21 @@ class Retryable(BaseMiddleware):
     def _should_retry(
         self, message: Message, exception: Exception, retry_attempt: int
     ) -> bool:
-        if not isinstance(exception, ActionError) or (
-            self.raises
-            and (
-                isinstance(exception.__cause__, self.raises)
-                or isinstance(exception, self.raises)
-            )
+        if not isinstance(exception, ActionError):
+            return False
+
+        if self.raises and (
+            isinstance(exception.__cause__, self.raises)
+            or isinstance(exception, self.raises)
         ):
             return False
 
         if should_retry := self.should_retry:
-            return should_retry(message, exception, retry_attempt)
+            if exception.__cause__:
+                assert isinstance(exception.__cause__, Exception)
+            return should_retry(
+                exception.__cause__ or exception, retry_attempt, message
+            )
 
         return retry_attempt < self.max_retries
 
