@@ -61,6 +61,7 @@ class ThreadedConsumer(ConsumerBase):
 
         ev.set()
         t.join()
+
         logger.debug("Consumer stopped")
 
     def _requeue_local_queue_messages(
@@ -121,6 +122,10 @@ class ThreadedConsumer(ConsumerBase):
                 thread.start()
 
     def _consume(self, queue: MessageQueue):
+        logger.info(
+            f"Consumer Thread '{threading.current_thread().name}' started."
+        )
+
         local_queue = self._local_queue
         consumer_num = len(self.queues)
         assert local_queue.maxsize > 0
@@ -132,9 +137,13 @@ class ThreadedConsumer(ConsumerBase):
                 if not hooked:
                     future.cancel()
                 for msg in future.result():
+                    logger.debug("Message %s received", msg.id)
                     local_queue.put(msg)
+                    logger.debug("Message %s put into the local queue", msg.id)
 
-        logger.info(f"Consumer {threading.current_thread().name} stopped.")
+        logger.info(
+            f"Consumer Thread '{threading.current_thread().name}' stopped."
+        )
 
     @contextlib.contextmanager
     def _hook_stop_event(self, future):
