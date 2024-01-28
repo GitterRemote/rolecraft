@@ -31,13 +31,13 @@ class ThreadedConsumer(ConsumerBase):
         self._local_queue = _notify_queue.NotifyQueue[Message](
             maxsize=self.prefetch_size
         )
-        self._result_future_sets = set()
+        self._result_futures_set = set()
 
     def stop(self):
         super().stop()
 
         # Cancel blocking receiving to stop consumer threads
-        for future in self._result_future_sets:
+        for future in self._result_futures_set:
             future.cancel()
 
         # Unblock worker threads waiting for the local quue
@@ -135,6 +135,6 @@ class ThreadedConsumer(ConsumerBase):
     @contextlib.contextmanager
     def _hook_stop_event(self, future):
         """hook the fs.cancel() with consumer's stop event."""
-        self._result_future_sets.add(future)
+        self._result_futures_set.add(future)
         yield not self._stopped
-        self._result_future_sets.remove(future)
+        self._result_futures_set.remove(future)
