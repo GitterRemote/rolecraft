@@ -50,6 +50,9 @@ class Worker:
 
     def _run(self, identity: int):
         """long running method"""
+        thread_name = threading.current_thread().name
+        logger.info("Worker thread '%s' started.", thread_name)
+
         # consumer will raise StopIteration when stopped
         for message in self.consumer:
             if self._stopped:
@@ -57,9 +60,10 @@ class Worker:
                 return
             self._handle(message)
 
-        logger.info(f"Worker {threading.current_thread().name} stopped.")
+        logger.info("Worker thread '%s' stopped.", thread_name)
 
     def _handle(self, message: Message):
+        logger.debug("Handling message %s", message.id)
         try:
             result = self._craft(message)
         except InterruptError:
@@ -68,6 +72,7 @@ class Worker:
         except Exception as e:
             self._handle_error(message, e)
         else:
+            logger.debug("Finished processing message %s", message.id)
             self._handle_result(message, result)
 
     def _craft(self, message: Message):
