@@ -2,7 +2,7 @@ import argparse
 import importlib
 import logging
 
-from . import service_factory as _service_factory
+import rolecraft
 
 parser = argparse.ArgumentParser(
     prog="RoleCraft",
@@ -31,6 +31,6 @@ if __name__ == "__main__":
 
     importlib.import_module(module)
 
-    service = _service_factory.ServiceFactory().create(prefetch_size=1)
+    service = rolecraft.ServiceFactory().create(prefetch_size=1)
     service.start(thread_num=worker_thread_num)
     service.join()
