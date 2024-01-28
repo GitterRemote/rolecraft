@@ -43,6 +43,7 @@ class ConsumerBase(Consumer):
         pass
 
     def stop(self):
+        logger.info("Stop consumer...")
         self._stopped = True
 
     def join(self):

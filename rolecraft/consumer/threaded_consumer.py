@@ -38,9 +38,11 @@ class ThreadedConsumer(ConsumerBase):
 
         # Cancel blocking receiving to stop consumer threads
         for future in self._result_futures_set:
+            logger.debug("Cancel result future %r", future)
             future.cancel()
 
         # Unblock worker threads waiting for the local quue
+        logger.debug("Notify all worker threads listening to the local queue")
         self._local_queue.notify_all()
 
     def join(self):
@@ -49,6 +51,7 @@ class ThreadedConsumer(ConsumerBase):
         # Handle leftover messages
         # Using a requeuing thread to fetch messages from the local queue to
         # unblock consumer threads
+        logger.debug("Requeue messages from the local queue")
         t, ev = self._requeue_local_queue_messages()
 
         # Join consumer threads
@@ -58,6 +61,7 @@ class ThreadedConsumer(ConsumerBase):
 
         ev.set()
         t.join()
+        logger.debug("Consumer stopped")
 
     def _requeue_local_queue_messages(
         self,
