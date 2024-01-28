@@ -123,7 +123,7 @@ class ThreadedConsumer(ConsumerBase):
 
     def _consume(self, queue: MessageQueue):
         thread_name = threading.current_thread().name
-        logger.info("Consumer Thread '%s' started.", thread_name)
+        logger.info("Consumer thread '%s' started.", thread_name)
 
         local_queue = self._local_queue
         consumer_num = len(self.queues)
@@ -146,7 +146,7 @@ class ThreadedConsumer(ConsumerBase):
                         thread_name,
                     )
 
-        logger.info("Consumer Thread '%s' stopped.", thread_name)
+        logger.info("Consumer thread '%s' stopped.", thread_name)
 
     @contextlib.contextmanager
     def _hook_stop_event(self, future):
