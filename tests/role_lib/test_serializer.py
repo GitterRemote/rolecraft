@@ -46,6 +46,23 @@ def test_serialize_with_dataclass_support(str_serializer):
     assert kwds == dict(d=D("0"))
 
 
+def test_serialize_with_optional_dataclass_support(str_serializer):
+    @dataclasses.dataclass
+    class D:
+        x: str
+        y: int = 1
+
+    def fn(a: int, b: str, *, c: float = 1.0, d: D | None = None):
+        pass
+
+    data = str_serializer.serialize(fn, args=(1, 2), kwds=dict(d=D("0")))
+    assert isinstance(data, str)
+
+    args, kwds = str_serializer.deserialize(fn=fn, data=data)
+    assert args == (1, 2)
+    assert kwds == dict(d=D("0"))
+
+
 def test_serialize_with_callable(str_serializer):
     class CallableClass:
         def __call__(self, a: int, b: str, *, c: float = 1.0) -> Any:

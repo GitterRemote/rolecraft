@@ -1,8 +1,10 @@
 import dataclasses
 import inspect
 import json
+import types
+import typing
 from collections.abc import Callable
-from typing import TypeGuard
+from typing import Any, TypeGuard
 
 SerializedData = str | bytes | None
 
@@ -32,9 +34,21 @@ class StrParamsSerializer(ParamsSerializer[str, tuple, dict]):
             value = dataclasses.asdict(value)
         return value
 
+    def _unwrap_optional(self, annotation: Any) -> Any:
+        origin = typing.get_origin(annotation)
+        if origin is types.UnionType:
+            args = typing.get_args(annotation)
+            if len(args) == 2 and type(None) in args:
+                if args[1] is type(None):
+                    return args[0]
+                return args[1]
+
+        return annotation
+
     def _restore(self, param: inspect.Parameter, value):
-        if dataclasses.is_dataclass(param.annotation):
-            return param.annotation(**value)
+        annotation = self._unwrap_optional(param.annotation)
+        if dataclasses.is_dataclass(annotation):
+            return annotation(**value)
         return value
 
     def _restore_args(
