@@ -26,9 +26,7 @@ class DefaultQueueDiscovery(QueueDiscovery):
 
         # add from role
         for role in self.role_hanger or ():
-            queue_name = role.options.get("queue_name")
-            if queue_name is None:
-                continue
+            queue_name = role.options.get("queue_name", "default")
             if broker := role.options.get("broker"):
                 queue_names_by_broker[broker].append(queue_name)
             else:
