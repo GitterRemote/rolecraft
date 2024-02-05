@@ -1,9 +1,10 @@
-from typing import Any
 import abc
-from collections.abc import Callable
 import concurrent.futures
 import threading
-from rolecraft import thread_local as _local
+from collections.abc import Callable
+from typing import Any
+
+from . import thread_local as _local
 
 
 class WorkerPool(abc.ABC):

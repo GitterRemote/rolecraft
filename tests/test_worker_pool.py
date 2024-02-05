@@ -1,8 +1,10 @@
-import pytest
 import threading
 import time
-from rolecraft import worker_pool as worker_pool_mod
-from rolecraft import thread_local as local_mod
+
+import pytest
+
+from rolecraft.service import thread_local as local_mod
+from rolecraft.service import worker_pool as worker_pool_mod
 
 
 @pytest.fixture()

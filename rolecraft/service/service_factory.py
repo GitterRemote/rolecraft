@@ -2,11 +2,7 @@ import logging
 from collections.abc import Callable
 from typing import Unpack
 
-from rolecraft import consumer as _consumer
 from rolecraft import role_lib as _role
-from rolecraft import worker as _worker
-from rolecraft import worker_pool as _worker_pool
-from rolecraft.consumer import ConsumerFactory, ConsumerOptions
 from rolecraft.queue_factory import (
     BatchBuildOptions,
     ConfigFetcher,
@@ -14,10 +10,14 @@ from rolecraft.queue_factory import (
 )
 from rolecraft.role_lib import RoleHanger
 from rolecraft.utils import typed_dict as _typed_dict
-from rolecraft.worker_pool import WorkerPool
 
+from . import consumer as _consumer
+from . import worker as _worker
+from . import worker_pool as _worker_pool
+from .consumer import ConsumerFactory, ConsumerOptions
 from .queue_discovery import QueueDiscovery
 from .service import Service
+from .worker_pool import WorkerPool
 
 logger = logging.getLogger(__name__)
 

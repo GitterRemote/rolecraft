@@ -2,7 +2,7 @@ import collections
 
 from rolecraft.queue_factory import QueueAndNameKeys
 from rolecraft.role_lib import RoleHanger, default_role_hanger
-from rolecraft.service_factory import QueueDiscovery
+from rolecraft.service import QueueDiscovery
 
 from . import config_store as _config_store
 

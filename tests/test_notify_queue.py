@@ -1,8 +1,10 @@
-import pytest
 import threading
-from unittest import mock
 import time
-from rolecraft.consumer import notify_queue as notify_queue_mod
+from unittest import mock
+
+import pytest
+
+from rolecraft.service.consumer import notify_queue as notify_queue_mod
 
 
 @pytest.fixture()
