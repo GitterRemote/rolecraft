@@ -9,25 +9,22 @@ from rolecraft.role_lib import ActionError
 from .base_middleware import BaseMiddleware
 
 
-class RetryableOptions(TypedDict, total=False):
-    max_retries: int
-    base_backoff_millis: int
-    max_backoff_millis: int
-    exponential_factor: float  # Exponential factor for backoff calculation
-    jitter_range: float  # Random jitter range as a percentage of the base backoff time
-
-    should_retry: Callable[[Exception, int, Message], bool] | None
-    raises: Sequence[type[Exception]] | type[Exception]
-
-
 class Retryable(BaseMiddleware):
     _BASE_BACKOFF_MILLIS = 5 * 60 * 1000
     _MAX_BACKOFF_MILLIS = 366 * 24 * 60 * 60 * 1000
 
+    class Options(TypedDict, total=False):
+        max_retries: int
+        base_backoff_millis: int
+        max_backoff_millis: int
+        exponential_factor: float  # Exponential factor for backoff calculation
+        jitter_range: float  # Random jitter range as a percentage of the base backoff time
+
+        should_retry: Callable[[Exception, int, Message], bool] | None
+        raises: Sequence[type[Exception]] | type[Exception]
+
     def __init__(
-        self,
-        queue: MessageQueue | None = None,
-        **options: Unpack[RetryableOptions],
+        self, queue: MessageQueue | None = None, **options: Unpack[Options]
     ) -> None:
         self.max_retries = options.get("max_retries", 3)
         self.base_backoff_millis = options.get(
@@ -47,7 +44,7 @@ class Retryable(BaseMiddleware):
 
     @property
     def options(self):
-        return RetryableOptions(
+        return self.Options(
             max_retries=self.max_retries,
             base_backoff_millis=self.base_backoff_millis,
             max_backoff_millis=self.max_backoff_millis,
