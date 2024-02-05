@@ -117,10 +117,9 @@ class MessageQueue[RawMessage](abc.ABC):
 
     @copy_msg_method_signature(Broker[Message].retry)
     def retry(self, message: Message, *args, **kwargs):
-        msg = self.broker.retry(
+        return self.broker.retry(
             self.encoder.encode(message), self.name, *args, **kwargs
         )
-        return self.encoder.decode(msg, queue=self)
 
     def close(self):
         return self.broker.close()

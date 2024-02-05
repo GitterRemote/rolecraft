@@ -84,9 +84,10 @@ class Retryable(BaseMiddleware):
             )
 
         delay_millis = int(self._compute_delay_millis(retries))
-        return self._guarded_queue.retry(
+        self._guarded_queue.retry(
             message, delay_millis=delay_millis, exception=exception
         )
+        return
 
     def _compute_delay_millis(self, retry_attempt: int) -> float:
         if retry_attempt == 0:

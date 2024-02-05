@@ -103,10 +103,10 @@ class Broker[Message](abc.ABC):
         *,
         delay_millis: int = 0,
         exception: Exception | None = None,
-    ) -> Message:
+    ) -> str:
         """Retry the message, as the handling of it has failed.
 
-        Returns: returns a message object.
+        Returns: returns the message id.
         """
         raise NotImplementedError
 

@@ -10,7 +10,7 @@ class BaseBroker(Broker[HeaderBytesRawMessage]):
         *,
         delay_millis: int = 0,
         exception: Exception | None = None,
-    ) -> HeaderBytesRawMessage:
+    ) -> str:
         self.ack(message, queue_name)
 
         # update retries header
@@ -20,9 +20,4 @@ class BaseBroker(Broker[HeaderBytesRawMessage]):
 
         # enqueue a new message
         new_message = message.replace(id="", headers=headers)
-        msg_id = self.enqueue(
-            queue_name, new_message, delay_millis=delay_millis
-        )
-        new_message.id = msg_id
-
-        return new_message
+        return self.enqueue(queue_name, new_message, delay_millis=delay_millis)
