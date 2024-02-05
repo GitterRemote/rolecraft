@@ -76,5 +76,10 @@ class StopEvent(threading.Event):
             return True
         return False
 
+    def check(self):
+        """Check if the flag is set and raise an InterruptError if it is."""
+        if self._event.is_set():
+            raise InterruptError
+
     def __getattr__(self, name: str):
         return getattr(self._event, name)
