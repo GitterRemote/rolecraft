@@ -1,9 +1,10 @@
 import logging
 import threading
 
+from rolecraft.message import Message
+from rolecraft.role_lib import InterruptError, RoleHanger
+
 from .consumer import Consumer
-from .message import Message
-from .role_lib import InterruptError, RoleHanger
 from .worker_pool import ThreadWorkerPool, WorkerPool
 
 logger = logging.getLogger(__name__)

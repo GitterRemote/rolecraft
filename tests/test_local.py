@@ -1,5 +1,5 @@
 import threading
-from rolecraft import thread_local as local_mod
+from rolecraft.service import thread_local as local_mod
 
 
 def test_in_different_threads():

@@ -1,10 +1,14 @@
 import dataclasses
 import threading
-import pytest
 from unittest import mock
-from rolecraft.consumer import threaded_consumer as threaded_consumer_mod
-from rolecraft.consumer.threaded_consumer import ThreadedConsumer
+
+import pytest
+
 from rolecraft.queue import MessageQueue
+from rolecraft.service.consumer import (
+    threaded_consumer as threaded_consumer_mod,
+)
+from rolecraft.service.consumer.threaded_consumer import ThreadedConsumer
 
 
 @pytest.fixture()

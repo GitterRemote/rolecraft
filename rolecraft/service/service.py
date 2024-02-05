@@ -1,10 +1,11 @@
 import logging
 import signal
 
-from rolecraft.consumer import Consumer
 from rolecraft.queue import MessageQueue
-from rolecraft.worker import Worker
-from rolecraft.worker_pool import ThreadWorkerPool, WorkerPool
+
+from .consumer import Consumer
+from .worker import Worker
+from .worker_pool import ThreadWorkerPool, WorkerPool
 
 logger = logging.getLogger(__name__)
 
