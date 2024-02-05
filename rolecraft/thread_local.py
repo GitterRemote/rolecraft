@@ -27,6 +27,14 @@ class ThreadLocal:
             value = StopEvent(value)
         self._thread_local.stop_event = value
 
+    @property
+    def ensured_interrupt_event(self) -> "StopEvent":
+        """A convenient property for StopEvent which has interrupt set to True"""
+        ev = self.stop_event
+        assert ev
+        ev.interrupt = True
+        return ev
+
 
 thread_local = ThreadLocal(threading.local())
 
