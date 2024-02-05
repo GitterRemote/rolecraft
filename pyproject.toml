@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "TaskForge"
+description = "TaskForge is a collaborative workspace where diverse roles seamlessly orchestrate and execute a series of events, managing tasks efficiently under a unified system."
+version = "0.0.1"
+readme = "README.md"
+license = { file = "LICENSE" }
+keywords = ["task queue", "broker"]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+]
+dependencies = []
+requires-python = ">= 3.12"
+
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+
+[project.urls]
+
+[tool.ruff]
+line-length = 79
+
+[tool.ruff.format]
+docstring-code-format = true
+docstring-code-line-length = 79
