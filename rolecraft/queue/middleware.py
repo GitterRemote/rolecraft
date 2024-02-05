@@ -1,7 +1,7 @@
 import abc
 from typing import Self
 
-from rolecraft.queue import MessageQueue
+from .queue import MessageQueue
 
 
 class MiddlewareError(Exception):

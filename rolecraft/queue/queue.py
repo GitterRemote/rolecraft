@@ -5,8 +5,8 @@ from collections.abc import Callable, Mapping
 from typing import Any, Concatenate
 
 from rolecraft.broker import Broker, EnqueueOptions
-from rolecraft.encoder import Encoder
-from rolecraft.message import Message
+from rolecraft.queue.encoder import Encoder
+from rolecraft.queue.message import Message
 
 __all__ = ["MessageQueue", "EnqueueOptions"]
 

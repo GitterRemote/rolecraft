@@ -4,7 +4,8 @@ import json
 import struct
 from typing import Any
 
-from .broker import BytesRawMessage, HeaderBytesRawMessage
+from rolecraft.broker import BytesRawMessage, HeaderBytesRawMessage
+
 from .message import Message
 
 

@@ -1,6 +1,6 @@
 from typing import Protocol, Unpack
 
-from rolecraft.queue_config import QueueConfig, QueueConfigOptions
+from rolecraft.queue import QueueConfig, QueueConfigOptions
 
 
 class ConfigFetcher(Protocol):

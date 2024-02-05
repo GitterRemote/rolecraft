@@ -1,7 +1,7 @@
 import logging
 import threading
 
-from rolecraft.message import Message
+from rolecraft.queue import Message
 from rolecraft.role_lib import InterruptError, RoleHanger
 
 from .consumer import Consumer

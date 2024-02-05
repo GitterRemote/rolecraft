@@ -2,7 +2,7 @@ from unittest import mock
 
 import pytest
 
-from rolecraft import message as message_mod
+from rolecraft.queue import message as message_mod
 from rolecraft.role_lib import role as role_mod
 
 

@@ -3,7 +3,7 @@ from unittest import mock
 import pytest
 
 from rolecraft.broker import IrrecoverableError, RecoverableError
-from rolecraft.message import Message
+from rolecraft.queue.message import Message
 from rolecraft.middlewares import queue_recoverable as queue_recoverable_mod
 
 

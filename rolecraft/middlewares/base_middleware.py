@@ -1,9 +1,7 @@
 import dataclasses
 from typing import Any, Self
 
-from rolecraft.message import Message
-from rolecraft.middleware import Middleware, MiddlewareError
-from rolecraft.queue import MessageQueue
+from rolecraft.queue import Message, MessageQueue, Middleware, MiddlewareError
 
 
 class UninitiatedError(MiddlewareError):

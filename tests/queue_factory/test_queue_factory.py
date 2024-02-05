@@ -1,7 +1,7 @@
 import pytest
 
 from rolecraft import middlewares as middlewares_mod
-from rolecraft.middleware import Middleware
+from rolecraft.queue.middleware import Middleware
 from rolecraft.queue_factory import queue_factory as queue_factory_mod
 
 

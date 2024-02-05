@@ -2,7 +2,7 @@ from unittest import mock
 
 import pytest
 
-from rolecraft import queue_config as queue_config_mod
+from rolecraft.queue import queue_config as queue_config_mod
 from rolecraft.queue_factory import queue_factory as queue_factory_mod
 from rolecraft.queue_factory import (
     cached_queue_factory as cached_queue_factory_mod,

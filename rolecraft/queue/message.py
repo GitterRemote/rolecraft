@@ -4,7 +4,7 @@ import dataclasses
 import typing
 
 if typing.TYPE_CHECKING:
-    from .queue import MessageQueue
+    from . import MessageQueue
 
 
 @dataclasses.dataclass(kw_only=True)

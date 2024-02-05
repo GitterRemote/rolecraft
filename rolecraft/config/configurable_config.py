@@ -3,8 +3,8 @@ import typing
 from typing import Any, Self, TypeVar, Unpack
 
 from rolecraft.broker import Broker, HeaderBytesRawMessage
-from rolecraft.encoder import Encoder
-from rolecraft.queue_config import (
+from rolecraft.queue import (
+    Encoder,
     IncompleteQueueConfig,
     PartialQueueConfigOptions,
     QueueConfig,

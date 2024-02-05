@@ -2,8 +2,7 @@ import dataclasses
 
 from rolecraft import middlewares as _middleware
 from rolecraft.broker import HeaderBytesRawMessage
-from rolecraft.encoder import HeaderBytesEncoder
-from rolecraft.queue_config import IncompleteQueueConfig
+from rolecraft.queue import HeaderBytesEncoder, IncompleteQueueConfig
 
 from .middleware_list import MiddlewareList
 

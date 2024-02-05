@@ -2,8 +2,7 @@ import typing
 from collections.abc import Callable
 from typing import Unpack
 
-from rolecraft.message import Message
-from rolecraft.queue import EnqueueOptions, MessageQueue
+from rolecraft.queue import EnqueueOptions, Message, MessageQueue
 from rolecraft.queue_factory import QueueConfigOptions, QueueFactory
 from rolecraft.utils import typed_dict as _typed_dict
 
