@@ -2,8 +2,7 @@ import abc
 import logging
 from collections.abc import Sequence
 
-from rolecraft.message import Message
-from rolecraft.queue import MessageQueue
+from rolecraft.queue import Message, MessageQueue
 
 from .consumer import Consumer, ConsumerStoppedError
 

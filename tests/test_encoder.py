@@ -2,8 +2,8 @@ from unittest import mock
 
 import pytest
 
-from rolecraft import encoder as _encoder
-from rolecraft import message as _message
+from rolecraft.queue import encoder as _encoder
+from rolecraft.queue import message as _message
 
 
 @pytest.fixture()

@@ -5,7 +5,7 @@ from collections.abc import Mapping
 from typing import Any, Unpack
 
 from rolecraft.broker import Broker
-from rolecraft.queue_config import IncompleteQueueConfig, QueueConfig
+from rolecraft.queue import IncompleteQueueConfig, QueueConfig
 from rolecraft.queue_factory.config_fetcher import (
     ConfigFetcher,
     QueueConfigOptions,

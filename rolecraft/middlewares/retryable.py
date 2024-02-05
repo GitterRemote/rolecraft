@@ -3,8 +3,7 @@ import random
 from collections.abc import Callable, Sequence
 from typing import TypedDict, Unpack
 
-from rolecraft.message import Message
-from rolecraft.queue import MessageQueue
+from rolecraft.queue import Message, MessageQueue
 from rolecraft.role_lib import ActionError
 
 from .base_middleware import BaseMiddleware

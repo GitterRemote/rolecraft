@@ -3,8 +3,9 @@ from collections.abc import Mapping, Sequence
 from typing import Any, TypedDict, TypeVar, Unpack
 
 from rolecraft.broker import Broker
-from rolecraft.encoder import Encoder
-from rolecraft.middleware import Middleware
+
+from .encoder import Encoder
+from .middleware import Middleware
 
 M_co = TypeVar("M_co", covariant=True)
 

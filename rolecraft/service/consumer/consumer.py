@@ -1,7 +1,7 @@
 import abc
-from collections.abc import Sequence, Iterator
-from rolecraft.queue import MessageQueue
-from rolecraft.message import Message
+from collections.abc import Iterator, Sequence
+
+from rolecraft.queue import Message, MessageQueue
 
 
 class ConsumerStoppedError(Exception):

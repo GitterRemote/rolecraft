@@ -5,8 +5,7 @@ import threading
 import time
 from collections.abc import Sequence
 
-from rolecraft.message import Message
-from rolecraft.queue import MessageQueue
+from rolecraft.queue import Message, MessageQueue
 
 from . import notify_queue as _notify_queue
 from .consumer_base import ConsumerBase

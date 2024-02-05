@@ -1,8 +1,7 @@
 from typing import Sequence, TypedDict, Unpack
 
 from rolecraft.broker import Broker
-from rolecraft.middleware import Middleware
-from rolecraft.queue import MessageQueue
+from rolecraft.queue import MessageQueue, Middleware
 
 from .config_fetcher import ConfigFetcher, QueueConfig, QueueConfigOptions
 
