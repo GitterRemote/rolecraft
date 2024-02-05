@@ -34,12 +34,13 @@ thread_local = ThreadLocal(threading.local())
 class StopEvent(threading.Event):
     def __init__(self, event: threading.Event) -> None:
         self._event = event
+        self.interrupt: bool = False
 
     def wait(
         self,
         timeout: float | None = None,
         *,
-        interrupt: bool = False,
+        interrupt: bool | None = None,
         cleanup: Callable[[], Any] | None = None,
     ) -> bool:
         """Allow to raise InterruptError when the event is set, instead of returning True.
@@ -60,7 +61,7 @@ class StopEvent(threading.Event):
             InterruptError: If `interrupt` is True, and the event is set.
         """
         if self._event.wait(timeout):
-            if interrupt:
+            if interrupt is True or (interrupt is None and self.interrupt):
                 if cleanup:
                     cleanup()
                 raise InterruptError
