@@ -1,12 +1,11 @@
-from typing import Any
 import abc
 import dataclasses
 import json
 import struct
-import typing
+from typing import Any
 
 from .broker import BytesRawMessage, HeaderBytesRawMessage
-from .message import Message, Meta
+from .message import Message
 
 
 class Encoder[RawMessage](abc.ABC):
@@ -28,8 +27,9 @@ class HeaderBytesEncoder(Encoder[HeaderBytesRawMessage]):
         msg_dict = self._to_dict(message)
 
         data = json.dumps(msg_dict).encode()
-        headers = self._encode_meta(message.meta)
-        return HeaderBytesRawMessage(id=message.id, data=data, headers=headers)
+        return HeaderBytesRawMessage(
+            id=message.id, data=data, headers=message.meta
+        )
 
     def _to_dict(self, message: Message) -> dict[str, Any]:
         data = {}
@@ -39,53 +39,13 @@ class HeaderBytesEncoder(Encoder[HeaderBytesRawMessage]):
             data[field.name] = getattr(message, field.name)
         return data
 
-    def _encode_meta(self, meta) -> dict[str, _META_VALUE_TYPE]:
-        """excludes the None value from dict"""
-        data = {}
-        for field in dataclasses.fields(meta):
-            value = getattr(meta, field.name)
-            if value is not None:
-                # assert type(value) in self._META_VALUE_TYPE
-                data[field.name] = value
-        return data
-
-    def _decode_meta(self, data: dict[str, _META_VALUE_TYPE]) -> Meta:
-        meta = Meta()
-        for field in dataclasses.fields(Meta):
-            value = data.get(field.name)
-            if value is not None:
-                setattr(
-                    meta, field.name, self._convert_type(value, field.type)
-                )
-        return meta
-
-    def _convert_type(self, value, field_type):
-        if isinstance(field_type, str):
-            if "int" in field_type:
-                return int(value)
-            elif "str" in field_type:
-                return str(value)
-            elif "float" in field_type:
-                return float(field_type)
-            else:
-                raise RuntimeError(
-                    f"Unknown field type {field_type} for {value}"
-                )
-
-        for t in typing.get_args(field_type):
-            if type(None) is t:
-                continue
-            return t(value)
-        else:
-            raise RuntimeError(f"Unknown field type {field_type} for {value}")
-
     def decode(
         self, raw_message: HeaderBytesRawMessage, *, queue, **kwargs
     ) -> Message:
         msg_dict = json.loads(raw_message.data)
         msg_dict["id"] = raw_message.id
         msg_dict["queue"] = queue
-        msg_dict["meta"] = self._decode_meta(raw_message.headers)
+        msg_dict["meta"] = raw_message.headers
         return Message(**msg_dict)
 
 

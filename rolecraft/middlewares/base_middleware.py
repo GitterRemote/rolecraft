@@ -1,3 +1,4 @@
+import dataclasses
 from typing import Any, Self
 
 from rolecraft.message import Message
@@ -12,6 +13,18 @@ class UninitiatedError(MiddlewareError):
 
 
 class BaseMiddleware(Middleware):
+    @dataclasses.dataclass
+    class Meta:
+        @classmethod
+        def create_from(cls, meta_data: dict[str, str | int | float]) -> Self:
+            return cls(
+                **{
+                    field.name: meta_data.get(field.name)
+                    for field in dataclasses.fields(cls)
+                    if field.name in meta_data
+                }
+            )
+
     def __init__(self, queue: MessageQueue | None = None) -> None:
         super().__init__(queue=queue)
         self.is_outmost = False

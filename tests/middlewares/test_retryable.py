@@ -10,7 +10,8 @@ from rolecraft.role_lib import ActionError
 @pytest.fixture()
 def queue(queue):
     def retry(message, *args, **kwargs):
-        message.meta.retries = (message.meta.retries or 0) + 1
+        retries = message.meta.get("retries") or 0
+        message.meta["retries"] = retries + 1
         return True
 
     queue.retry.side_effect = retry
@@ -26,8 +27,7 @@ def retryable(queue):
 @pytest.fixture()
 def message():
     msg = mock.MagicMock(message_mod.Message)
-    msg.meta = mock.MagicMock(message_mod.Meta)
-    msg.meta.retries = None
+    msg.meta = {"retries": 0}
     return msg
 
 
