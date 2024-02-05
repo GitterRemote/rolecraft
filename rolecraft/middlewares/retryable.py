@@ -1,3 +1,4 @@
+import dataclasses
 import random
 from collections.abc import Callable, Sequence
 from typing import TypedDict, Unpack
@@ -22,6 +23,10 @@ class Retryable(BaseMiddleware):
 
         should_retry: Callable[[Exception, int, Message], bool] | None
         raises: Sequence[type[Exception]] | type[Exception]
+
+    @dataclasses.dataclass
+    class Meta(BaseMiddleware.Meta):
+        retries: int = 0
 
     def __init__(
         self, queue: MessageQueue | None = None, **options: Unpack[Options]
@@ -76,7 +81,7 @@ class Retryable(BaseMiddleware):
         return retry_attempt < self.max_retries
 
     def nack(self, message: Message, exception: Exception, **kwargs):
-        retries = message.meta.retries or 0
+        retries = self.Meta.create_from(message.meta).retries
 
         if not self._should_retry(message, exception, retries):
             return self._guarded_queue.nack(
