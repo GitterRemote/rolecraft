@@ -71,7 +71,7 @@ def test_max_backoff_millis(retryable, queue, message, exc):
 def test_should_retry(retryable, queue, message, exc):
     rv = False
 
-    def should_retry(msg, error, retries):
+    def should_retry(error, retries, msg):
         nonlocal rv
         rv = msg is message and error is exc and retries == 0
         return False
