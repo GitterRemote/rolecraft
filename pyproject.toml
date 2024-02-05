@@ -3,8 +3,8 @@ requires = ["setuptools >= 61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "TaskForge"
-description = "TaskForge is a collaborative workspace where diverse roles seamlessly orchestrate and execute a series of events, managing tasks efficiently under a unified system."
+name = "RoleCraft"
+description = "RoleCraft is a collaborative workspace where diverse roles seamlessly orchestrate and execute a series of messages, managing tasks efficiently under a unified system."
 version = "0.0.1"
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -17,12 +17,16 @@ classifiers = [
 dependencies = []
 requires-python = ">= 3.12"
 
-
 [project.optional-dependencies]
 dev = ["pytest"]
 
+[project.scripts]
+rolecraft = "rolecraft.cli:main"
 
 [project.urls]
+Homepage = "https://github.com/GitterRemote/rolecraft"
+Repository = "https://github.com/GitterRemote/rolecraft.git"
+Issues = "https://github.com/GitterRemote/rolecraft/issues"
 
 [tool.ruff]
 line-length = 79
