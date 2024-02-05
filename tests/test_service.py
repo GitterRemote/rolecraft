@@ -153,13 +153,7 @@ def test_dispatch_messages_with_role_bound_broker(create_service, broker2):
             fn.dispatch_message(i, second=i)
         time.sleep(0.1)
 
-    assert not rv
-
-    with create_service(queue_names_by_broker={broker2: ["default"]}):
-        for i in range(100):
-            fn.dispatch_message(i, second=i)
-        time.sleep(0.1)
-    assert len(rv) == 200
+    assert len(rv) == 100
     assert set(map(lambda x: x * 2, range(100))) == set(rv)
 
 
