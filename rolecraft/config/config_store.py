@@ -1,7 +1,7 @@
 import abc
 import dataclasses
 from collections import defaultdict
-from collections.abc import Mapping
+from collections.abc import Collection, Mapping
 from typing import Any, Unpack
 
 from rolecraft.broker import Broker
@@ -24,7 +24,7 @@ class ConfigStore(abc.ABC):
     BrokerQueueConfigType = Mapping[Broker[Any], QueueConfig[Any]]
     BrokerQueueConfigsType = Mapping[Broker[Any], QueueConfigsType]
 
-    QueueNamesByBrokerType = Mapping[Broker[Any], list[str]]
+    QueueNamesByBrokerType = Mapping[Broker[Any], Collection[str]]
 
     @abc.abstractmethod
     def __init__(
@@ -41,7 +41,6 @@ class ConfigStore(abc.ABC):
     def fetcher(self) -> ConfigFetcher:
         raise NotImplementedError
 
-    @property
     @abc.abstractmethod
     def parsed_queue_names_by_broker(self) -> QueueNamesByBrokerType:
         """queue names from queue_names_by_broker if exists otherwise parsed from queue_configs"""
@@ -62,7 +61,6 @@ class SimpleConfigStore(ConfigStore, ConfigFetcher):
         dataclasses.field(default_factory=dict)
     )
 
-    @property
     def parsed_queue_names_by_broker(
         self,
     ) -> ConfigStore.QueueNamesByBrokerType:

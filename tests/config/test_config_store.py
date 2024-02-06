@@ -145,7 +145,7 @@ class TestBrokerQueueConfigsOnlyStore:
     def test_parsed_queue_names_by_broker(
         self, store, queue_config2, queue_config3
     ):
-        assert store.parsed_queue_names_by_broker == {
+        assert store.parsed_queue_names_by_broker() == {
             queue_config2.broker: ["queue2"],
             queue_config3.broker: ["queue3"],
         }
@@ -159,7 +159,7 @@ class TestHybridQueueConfigs:
     def test_parsed_queue_names_by_broker(
         self, store, queue_config2, queue_config3
     ):
-        assert store.parsed_queue_names_by_broker == {
+        assert store.parsed_queue_names_by_broker() == {
             queue_config2.broker: ["queue2"],
             queue_config3.broker: ["queue3", "queue3-2"],
         }
