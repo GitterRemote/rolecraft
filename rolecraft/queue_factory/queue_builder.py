@@ -1,4 +1,5 @@
-from typing import Sequence, TypedDict, Unpack
+from collections.abc import Collection, Mapping, Sequence
+from typing import TypedDict, Unpack
 
 from rolecraft.broker import Broker
 from rolecraft.queue import MessageQueue, Middleware
@@ -7,9 +8,9 @@ from .config_fetcher import ConfigFetcher, QueueConfig, QueueConfigOptions
 
 
 class QueueAndNameKeys(TypedDict, total=False):
-    queue_names: list[str] | None
-    queue_names_by_broker: dict[Broker, list[str]] | None
-    raw_queues: list[MessageQueue] | None
+    queue_names: Collection[str] | None
+    queue_names_by_broker: Mapping[Broker, Collection[str]] | None
+    raw_queues: Collection[MessageQueue] | None
 
 
 class QueueBuildOptions(TypedDict, total=False):
