@@ -12,7 +12,7 @@ parser = argparse.ArgumentParser(
 )
 
 parser.add_argument("module")
-parser.add_argument("-w", "--worker-threads", type=int)
+parser.add_argument("-t", "--worker-threads", type=int)
 parser.add_argument("--verbose", "-v", action="count", default=0)
 
 

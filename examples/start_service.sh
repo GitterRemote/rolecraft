@@ -1,3 +1,3 @@
 #!/usr/bin/env sh
 
-python -m rolecraft example -w 2
+python -m rolecraft example -t 2 -v
