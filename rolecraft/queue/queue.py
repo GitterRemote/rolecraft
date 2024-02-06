@@ -61,6 +61,9 @@ class MessageQueue[RawMessage](abc.ABC):
         self.wait_time_seconds = wait_time_seconds
         self.settings = settings or {}
 
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.name}, {self.broker})"
+
     @copy_method_signature(Broker[Message].enqueue)
     def enqueue(self, message: Message, *args, **kwargs):
         raw_message = self.encoder.encode(message)

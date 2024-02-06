@@ -49,6 +49,11 @@ class BaseMiddleware(Middleware):
     def copy_with(self, queue: MessageQueue) -> Self:
         return self.__class__(queue=queue, **self.options)
 
+    def __repr__(self) -> str:
+        if self.queue:
+            return f"{self.__class__.__name__}({repr(self.queue)})"
+        return f"{self.__class__.__name__}(options={repr(self.options)})"
+
 
 class Outermost(BaseMiddleware):
     """Outermost Middleware to update the `Message.queue` attribute to `self`."""
