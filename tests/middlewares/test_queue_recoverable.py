@@ -9,9 +9,7 @@ from rolecraft.middlewares import queue_recoverable as queue_recoverable_mod
 
 @pytest.fixture()
 def middleware(queue):
-    q = queue_recoverable_mod.QueueRecoverable(queue)
-    q.is_outmost = True
-    return q
+    return queue_recoverable_mod.QueueRecoverable(queue)
 
 
 @pytest.fixture()
@@ -24,6 +22,7 @@ def new_message(queue):
 
 def test_recoverable_error_for_receive(queue, middleware, new_message):
     msgs = [new_message(), new_message()]
+    queue.receive.__name__ = "receive"
     queue.receive.side_effect = [RecoverableError, msgs]
     assert callable(queue.receive)
 
@@ -57,6 +56,7 @@ def test_irrecoverable_error(queue, middleware, new_message):
 def test_recoverable_error_exceeds_max_retries(queue, middleware, new_message):
     middleware.queue_retries = 2
     msgs = [new_message(), new_message()]
+    queue.receive.__name__ = "receive"
     queue.receive.side_effect = [
         RecoverableError,
         RecoverableError,

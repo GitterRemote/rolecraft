@@ -17,6 +17,6 @@ class Middleware(abc.ABC):
         return getattr(self.queue, name)
 
     @abc.abstractmethod
-    def __call__(self, queue: MessageQueue) -> Self:
+    def __call__(self, queue: MessageQueue) -> MessageQueue:
         """Create a new middleware instance with the current options and the passed-in queue"""
         ...
