@@ -18,6 +18,9 @@ class ReceiveFuture[R](abc.ABC, Hashable):
     ) -> "ReceiveFuture[T]":
         return TransformerReceiveFuture(self, transformer)
 
+    def __hash__(self) -> int:
+        return id(self)
+
 
 class TransformerReceiveFuture[R, O](ReceiveFuture[O]):
     def __init__(
@@ -34,3 +37,14 @@ class TransformerReceiveFuture[R, O](ReceiveFuture[O]):
 
     def __hash__(self) -> int:
         return hash(self.future)
+
+
+class ProvidedReceiveFuture[R](ReceiveFuture[R]):
+    def __init__(self, result: R) -> None:
+        self._result = result
+
+    def result(self) -> R:
+        return self._result
+
+    def cancel(self):
+        return
