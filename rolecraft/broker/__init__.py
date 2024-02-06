@@ -1,5 +1,5 @@
 from .base_broker import BaseBroker
-from .broker import Broker, EnqueueOptions, ReceiveFuture
+from .broker import Broker, EnqueueOptions
 from .error import (
     BrokerError,
     IrrecoverableError,
@@ -8,6 +8,7 @@ from .error import (
     RecoverableError,
 )
 from .raw_message import BytesRawMessage, HeaderBytesRawMessage, RawMessage
+from .receive_future import ProvidedReceiveFuture, ReceiveFuture
 from .stub_broker import StubBroker
 
 __all__ = [
@@ -24,4 +25,5 @@ __all__ = [
     "BaseBroker",
     "QueueNotFound",
     "RawMessage",
+    "ProvidedReceiveFuture",
 ]
