@@ -32,6 +32,7 @@ class QueueBuilder:
     def build(self, **kwds: Unpack[QueueAndNameKeys]) -> list[MessageQueue]:
         all_queues: list[MessageQueue] = []
 
+        # TODO: remove queue names from queue_names_by_broker after they are built with the same broker here
         if queue_names := kwds.get("queue_names"):
             all_queues.extend(self._build_queues(queue_names))
 
