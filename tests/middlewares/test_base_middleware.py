@@ -36,7 +36,10 @@ def middleware():
 
 
 def test_middleware_call(middleware, queue):
-    m = middleware(queue)
+    outermost = middleware(queue)
+    assert isinstance(outermost, middlewares_mod.Outermost)
+
+    m = outermost.queue
     assert m is not middleware
     assert isinstance(m, MessageQueue)
     assert m.queue is queue
@@ -58,10 +61,12 @@ def test_middleware_delegate(middleware, queue):
 
 
 def test_middleware_is_outmost(middleware, queue):
-    assert middleware.is_outmost is False
-    assert middleware(queue).is_outmost is True
+    assert not isinstance(queue, middlewares_mod.Outermost)
 
-    m1 = middleware(queue)
-    m2 = middleware(m1)
-    assert m1.is_outmost is False
-    assert m2.is_outmost is True
+    first_wrap = middleware(queue)
+    assert isinstance(first_wrap, middlewares_mod.Outermost)
+    assert first_wrap.queue.queue is queue
+
+    second_wrap = middleware(first_wrap)
+    assert isinstance(second_wrap, middlewares_mod.Outermost)
+    assert second_wrap.queue.queue is first_wrap.queue

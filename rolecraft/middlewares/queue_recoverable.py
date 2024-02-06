@@ -26,9 +26,6 @@ class QueueRecoverable(BaseMiddleware):
         super().__init__(queue)
         self.queue_retries = options.get("queue_retries", 3)
 
-        self.receive = self._make_recoverale(super().receive)
-        self.block_receive = self._make_recoverale(super().block_receive)
-
     @property
     def options(self):
         return self.Options(queue_retries=self.queue_retries)
