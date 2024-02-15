@@ -27,7 +27,7 @@ class StrParamsSerializer(ParamsSerializer[str, tuple, dict]):
     def serialize(self, fn: Callable, args: tuple, kwds: dict) -> str:
         args_data = [self._convert(v) for v in args]
         kwds_data = {k: self._convert(v) for k, v in kwds.items()}
-        return json.dumps(dict(args=args_data, kwds=kwds_data))
+        return json.dumps(dict(a=args_data, k=kwds_data))
 
     def _convert(self, value):
         if dataclasses.is_dataclass(value):
@@ -81,8 +81,8 @@ class StrParamsSerializer(ParamsSerializer[str, tuple, dict]):
     def deserialize(self, fn: Callable, data: str) -> tuple[tuple, dict]:
         data_dict = json.loads(data)
         sig = inspect.signature(fn, eval_str=True)
-        args = self._restore_args(sig, data_dict.get("args", ()))
-        kwds = self._restore_kwds(sig, data_dict.get("kwds", {}))
+        args = self._restore_args(sig, data_dict.get("a", ()))
+        kwds = self._restore_kwds(sig, data_dict.get("k", {}))
         return args, kwds
 
     def support(self, data) -> TypeGuard[str]:
