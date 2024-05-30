@@ -126,7 +126,7 @@ class ThreadedConsumer(ConsumerBase):
         logger.info("Consumer thread '%s' started.", thread_name)
 
         local_queue = self._local_queue
-        consumer_num = len(self.queues)
+        consumer_num = len(self.queues)  # each consumer for an upstream queue
         assert local_queue.maxsize > 0
         batch_size = math.ceil(local_queue.maxsize / consumer_num)
 
