@@ -36,7 +36,8 @@ class ThreadedConsumer(ConsumerBase):
         super().stop()
 
         # Cancel blocking receiving to stop consumer threads
-        for future in self._result_futures_set:
+        # Use `set.copy()` method to resolve "RuntimeError: Set changed size during iteration" issue
+        for future in self._result_futures_set.copy():
             logger.debug("Cancel result future %r", future)
             future.cancel()
 
